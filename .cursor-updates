@@ -6,4 +6,3 @@
 - Fixed dynamic route warning by adding force-dynamic config to root page
 - Added Storybook with Button component and stories, updated .cursorrules with Storybook guidelines
 - Captured screenshot of Button component stories in Storybook
-- Resolved favicon conflict by removing duplicate favicon.ico from public directory, keeping the one in app directory
