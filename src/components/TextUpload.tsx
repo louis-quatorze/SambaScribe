@@ -4,13 +4,13 @@ import { ChangeEvent, useState } from "react";
 import { toast } from "react-toastify";
 import { Loader2 } from "lucide-react";
 
-interface PdfUploadProps {
+interface TextUploadProps {
   onFileSelect?: (file: File) => void;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
-export function PdfUpload({ onFileSelect }: PdfUploadProps) {
+export function TextUpload({ onFileSelect }: TextUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -19,8 +19,8 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
     if (!file) return;
 
     // Validate file type
-    if (file.type !== "application/pdf") {
-      toast.error("Please upload a PDF file");
+    if (!file.type.match('text.*') && file.type !== 'application/octet-stream') {
+      toast.error("Please upload a text file (.txt, .md, etc.)");
       event.target.value = ""; // Clear the input
       return;
     }
@@ -49,7 +49,7 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
 
       const uploadData = await uploadResponse.json();
       
-      // Process the uploaded PDF
+      // Process the uploaded text file
       setIsProcessing(true);
       const processResponse = await fetch("/api/process", {
         method: "POST",
@@ -65,14 +65,14 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
       }
 
       const processData = await processResponse.json();
-      toast.success("PDF processed successfully");
+      toast.success("Text file processed successfully");
       
       if (onFileSelect) {
         onFileSelect(file);
       }
     } catch (error) {
       console.error("Upload/Process error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to handle PDF. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to handle text file. Please try again.");
     } finally {
       setIsUploading(false);
       setIsProcessing(false);
@@ -83,10 +83,10 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
   return (
     <div className="w-full max-w-xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
       <label 
-        htmlFor="pdfUpload" 
+        htmlFor="textUpload" 
         className="block text-lg font-medium text-gray-700 dark:text-gray-200 mb-4"
       >
-        Upload PDF
+        Upload Text File
       </label>
       <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
         <div className="space-y-1 text-center">
@@ -115,15 +115,15 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
               </svg>
               <div className="flex text-sm text-gray-600 dark:text-gray-400">
                 <label
-                  htmlFor="pdfUpload"
+                  htmlFor="textUpload"
                   className="relative cursor-pointer rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
                 >
                   <span>Upload a file</span>
                   <input
-                    id="pdfUpload"
-                    name="pdfUpload"
+                    id="textUpload"
+                    name="textUpload"
                     type="file"
-                    accept="application/pdf"
+                    accept=".txt,.md,.text,text/plain"
                     className="sr-only"
                     onChange={handleFileChange}
                     disabled={isUploading || isProcessing}
@@ -132,7 +132,7 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
                 <p className="pl-1">or drag and drop</p>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                PDF files only, max 10MB
+                Text files only (.txt, .md), max 10MB
               </p>
             </>
           )}

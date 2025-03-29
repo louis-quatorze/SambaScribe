@@ -6,4 +6,6 @@
 - Fixed dynamic route warning by adding force-dynamic config to root page
 - Added Storybook with Button component and stories, updated .cursorrules with Storybook guidelines
 - Captured screenshot of Button component stories in Storybook
-- Cleaned up Next.js cache and resolved favicon error by removing .next directory
+- Fixed PDF.js canvas dependency by installing canvas package and updating PDF processing implementation with proper worker initialization.
+- Fixed PDF.js worker configuration by adding proper client/server setup and CDN worker source
+- Migrated from PDF processing to text file processing to resolve PDF worker module issues

@@ -1,6 +1,5 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { getDocument, version } from 'pdfjs-dist';
 
 export interface NotationData {
   text: string;
@@ -9,40 +8,15 @@ export interface NotationData {
   breaks: string[];
 }
 
-export async function processPdfFile(filename: string): Promise<NotationData> {
+export async function processTextFile(filename: string): Promise<NotationData> {
   try {
     if (!filename || typeof filename !== 'string') {
       throw new Error('Invalid filename provided');
     }
 
     const filePath = join(process.cwd(), 'uploads', filename);
-    const fileBuffer = await readFile(filePath);
-    
-    // Convert Buffer to Uint8Array
-    const uint8Array = new Uint8Array(fileBuffer);
-
-    // Configure PDF.js for server-side processing
-    const loadingTask = getDocument({
-      data: uint8Array,
-      useSystemFonts: true,
-      disableFontFace: true,
-      verbosity: 0,
-      isEvalSupported: false,
-      useWorkerFetch: false
-    });
-
-    const pdf = await loadingTask.promise;
-    let fullText = '';
-
-    // Extract text from all pages
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const pageText = content.items
-        .map((item: any) => item.str)
-        .join(' ');
-      fullText += pageText + '\n';
-    }
+    const fileContent = await readFile(filePath, 'utf-8');
+    const fullText = fileContent;
 
     // Extract patterns and other data
     const patterns = extractPatterns(fullText);
@@ -56,8 +30,8 @@ export async function processPdfFile(filename: string): Promise<NotationData> {
       breaks
     };
   } catch (error) {
-    console.error('PDF processing error:', error);
-    throw error instanceof Error ? error : new Error('Failed to process PDF file');
+    console.error('Text processing error:', error);
+    throw error instanceof Error ? error : new Error('Failed to process text file');
   }
 }
 

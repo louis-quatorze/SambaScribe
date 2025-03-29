@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processPdfFile } from "@/lib/services/pdfProcessor";
+import { processTextFile } from "@/lib/services/textProcessor";
 
 export async function POST(request: NextRequest) {
   try {
-    const { filename } = await request.json();
+    const data = await request.json();
+    const filename = data?.filename;
 
-    if (!filename) {
+    if (!filename || typeof filename !== 'string') {
       return NextResponse.json(
-        { error: "No filename provided" },
+        { error: "Invalid or missing filename" },
         { status: 400 }
       );
     }
 
-    const notationData = await processPdfFile(filename);
+    const notationData = await processTextFile(filename);
 
     return NextResponse.json({ 
       success: true,
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Processing error:", error);
     return NextResponse.json(
-      { error: "Failed to process PDF file" },
+      { error: error instanceof Error ? error.message : "Failed to process text file" },
       { status: 500 }
     );
   }

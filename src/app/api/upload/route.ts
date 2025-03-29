@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    if (file.type !== "application/pdf") {
+    if (!file.type.match('text.*') && file.type !== 'application/octet-stream') {
       return NextResponse.json(
-        { error: "Invalid file type. Please upload a PDF file" },
+        { error: "Invalid file type. Please upload a text file (.txt, .md, etc.)" },
         { status: 400 }
       );
     }
@@ -44,15 +44,6 @@ export async function POST(request: NextRequest) {
     // Convert File to Buffer and write to filesystem
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Additional file type validation using magic numbers
-    const pdfMagicNumber = buffer.slice(0, 4).toString('hex');
-    if (pdfMagicNumber !== '25504446') { // '%PDF' in hex
-      return NextResponse.json(
-        { error: "Invalid file content. Please upload a valid PDF file" },
-        { status: 400 }
-      );
-    }
 
     await writeFile(filePath, buffer);
 

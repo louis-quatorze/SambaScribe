@@ -1,6 +1,6 @@
 "use client";
 
-import { PdfUpload } from "@/components/PdfUpload";
+import { TextUpload } from "@/components/TextUpload";
 
 export function HomePage() {
   return (
@@ -9,12 +9,12 @@ export function HomePage() {
         <div className="flex-1 flex items-start justify-center bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950">
           <section className="max-w-7xl w-full space-y-8 animate-fade-in p-4">
             <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-              SambaScribe - PDF to Mnemonic Converter
+              SambaScribe - Text to Mnemonic Converter
             </h1>
             <p className="text-center text-gray-600 dark:text-gray-400">
-              Upload your Samba notation PDF to generate helpful mnemonics
+              Upload your Samba notation text file to generate helpful mnemonics
             </p>
-            <PdfUpload />
+            <TextUpload />
           </section>
         </div>
       </main>
