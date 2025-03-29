@@ -17,17 +17,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    const acceptedTypes = ["application/pdf", "text/plain", "text/markdown"];
-    const isAcceptedType = acceptedTypes.includes(file.type) || 
-                          file.name.endsWith('.pdf') || 
-                          file.name.endsWith('.txt') || 
-                          file.name.endsWith('.md') ||
-                          file.type === 'application/octet-stream';
-    
-    if (!isAcceptedType) {
+    // Validate file type - accept PDF or text files
+    const validTypes = ['application/pdf', 'text/plain', 'text/markdown'];
+    const validExtensions = ['.pdf', '.txt', '.md'];
+    const isValidType = validTypes.includes(file.type) || 
+                        validExtensions.some(ext => file.name.toLowerCase().endsWith(ext)) ||
+                        file.type === 'application/octet-stream';
+                        
+    if (!isValidType) {
       return NextResponse.json(
-        { error: "Invalid file type. Please upload a PDF or text file (.pdf, .txt, .md)" },
+        { error: "Invalid file type. Please upload a PDF or text file" },
         { status: 400 }
       );
     }
@@ -51,17 +50,6 @@ export async function POST(request: NextRequest) {
     // Convert File to Buffer and write to filesystem
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Additional file type validation for PDFs using magic numbers
-    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-      const pdfMagicNumber = buffer.slice(0, 4).toString('hex');
-      if (pdfMagicNumber !== '25504446') { // '%PDF' in hex
-        return NextResponse.json(
-          { error: "Invalid file content. Please upload a valid PDF file" },
-          { status: 400 }
-        );
-      }
-    }
 
     await writeFile(filePath, buffer);
 

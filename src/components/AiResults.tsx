@@ -8,7 +8,7 @@ interface AiResultsProps {
 }
 
 export function AiResults({ data }: AiResultsProps) {
-  const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics' | 'patterns' | 'raw'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics'>('summary');
 
   if (!data) {
     return null;
@@ -38,26 +38,6 @@ export function AiResults({ data }: AiResultsProps) {
           >
             Mnemonics
           </button>
-          <button
-            onClick={() => setActiveTab('patterns')}
-            className={`px-4 py-3 text-sm font-medium ${
-              activeTab === 'patterns'
-                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            Detected Patterns
-          </button>
-          <button
-            onClick={() => setActiveTab('raw')}
-            className={`px-4 py-3 text-sm font-medium ${
-              activeTab === 'raw'
-                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            Raw Text
-          </button>
         </nav>
       </div>
 
@@ -68,21 +48,12 @@ export function AiResults({ data }: AiResultsProps) {
             <div className="prose dark:prose-invert max-w-none">
               <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{data.aiSummary}</p>
             </div>
-            {data.instruments.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-white">Instruments Detected</h3>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {data.instruments.map((instrument, i) => (
-                    <span 
-                      key={i} 
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                    >
-                      {instrument}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                Note: This is a general analysis of samba notation based on the file name. 
+                PDF parsing has been simplified to avoid technical errors.
+              </p>
+            </div>
           </div>
         )}
 
@@ -100,43 +71,11 @@ export function AiResults({ data }: AiResultsProps) {
             ) : (
               <p className="text-gray-500 dark:text-gray-400">No mnemonics were generated.</p>
             )}
-          </div>
-        )}
-
-        {activeTab === 'patterns' && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Detected Patterns</h2>
-            {data.patterns.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {data.patterns.map((pattern, i) => (
-                  <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-md font-mono">
-                    {pattern}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400">No patterns were detected.</p>
-            )}
-            
-            {data.breaks.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-white">Breaks</h3>
-                <ul className="mt-2 space-y-2 list-disc list-inside text-gray-700 dark:text-gray-300">
-                  {data.breaks.map((breakText, i) => (
-                    <li key={i}>{breakText}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'raw' && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Raw Text From PDF</h2>
-            <pre className="p-4 bg-gray-50 dark:bg-gray-700 rounded-md text-sm text-gray-800 dark:text-gray-300 whitespace-pre-wrap overflow-auto max-h-96">
-              {data.text}
-            </pre>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                These mnemonics are general examples for common samba patterns rather than specific to your file's content.
+              </p>
+            </div>
           </div>
         )}
       </div>

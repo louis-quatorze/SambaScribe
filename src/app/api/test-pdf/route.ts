@@ -1,36 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import { join } from "path";
-import { processTextFile } from "@/lib/services/textProcessor";
+import { aiProcessFile } from "@/lib/services/aiPdfProcessor";
 
-// Sample test text content
-const TEST_TEXT_CONTENT = `Surdo xxx o-o break
+export async function GET(request: NextRequest) {
+  try {
+    // Create a simple test text file
+    const testContent = `Surdo xxx o-o break
 Caixa x-x-x-x-
 Repinique xoxoxo
 Tamborim x-x-x-
 Break: everyone stop
 Surdo solo: x--x--x`;
 
-export async function GET(request: NextRequest) {
-  try {
-    // Create a test text file
     const testFilename = `test-${Date.now()}.txt`;
     const filePath = join(process.cwd(), 'uploads', testFilename);
     
-    await writeFile(filePath, TEST_TEXT_CONTENT);
+    await writeFile(filePath, testContent);
     
-    // Process the text file
-    const result = await processTextFile(testFilename);
+    // Process the file with AI
+    const result = await aiProcessFile(testFilename);
     
     return NextResponse.json({ 
       success: true, 
       result,
-      message: 'Text file processed successfully'
+      message: 'Test file processed successfully with AI'
     });
   } catch (error) {
-    console.error('Test text processing error:', error);
+    console.error('Test processing error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to process test text file' },
+      { error: error instanceof Error ? error.message : 'Failed to process test file' },
       { status: 500 }
     );
   }

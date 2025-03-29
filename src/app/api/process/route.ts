@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processTextFile } from "@/lib/services/textProcessor";
+import { aiProcessFile } from "@/lib/services/aiPdfProcessor";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const notationData = await processTextFile(filename);
+    const notationData = await aiProcessFile(filename);
 
     return NextResponse.json({ 
       success: true,
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Processing error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to process text file" },
+      { error: error instanceof Error ? error.message : "Failed to process file" },
       { status: 500 }
     );
   }
