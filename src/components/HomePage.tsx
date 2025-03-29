@@ -1,20 +1,31 @@
 "use client";
 
-import { TextUpload } from "@/components/TextUpload";
+import { useState } from "react";
+import { PdfUpload } from "@/components/PdfUpload";
+import { AiResults } from "@/components/AiResults";
+import { AiNotationData } from "@/lib/services/aiPdfProcessor";
 
 export function HomePage() {
+  const [aiResults, setAiResults] = useState<AiNotationData | null>(null);
+
+  const handleProcessComplete = (data: AiNotationData) => {
+    setAiResults(data);
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative">
       <main className="flex-1 flex flex-col w-full mx-auto">
-        <div className="flex-1 flex items-start justify-center bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950">
+        <div className="flex-1 flex flex-col items-start justify-center bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950">
           <section className="max-w-7xl w-full space-y-8 animate-fade-in p-4">
             <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-              SambaScribe - Text to Mnemonic Converter
+              SambaScribe - AI Samba Notation Analyzer
             </h1>
             <p className="text-center text-gray-600 dark:text-gray-400">
-              Upload your Samba notation text file to generate helpful mnemonics
+              Upload your Samba notation PDF for AI-powered analysis and mnemonic generation
             </p>
-            <TextUpload />
+            <PdfUpload onProcessComplete={handleProcessComplete} />
+            
+            {aiResults && <AiResults data={aiResults} />}
           </section>
         </div>
       </main>

@@ -3,23 +3,26 @@
 import { ChangeEvent, useState } from "react";
 import { toast } from "react-toastify";
 import { Loader2 } from "lucide-react";
+import { AiNotationData } from "@/lib/services/aiPdfProcessor";
 
 interface PdfUploadProps {
   onFileSelect?: (file: File) => void;
+  onProcessComplete?: (data: AiNotationData) => void;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
-export function PdfUpload({ onFileSelect }: PdfUploadProps) {
+export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState(false);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (file.type !== "application/pdf") {
+    if (file.type !== "application/pdf" && !file.name.endsWith('.pdf')) {
       toast.error("Please upload a PDF file");
       event.target.value = ""; // Clear the input
       return;
@@ -49,9 +52,16 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
 
       const uploadData = await uploadResponse.json();
       
-      // Process the uploaded PDF
-      setIsProcessing(true);
-      const processResponse = await fetch("/api/process", {
+      if (onFileSelect) {
+        onFileSelect(file);
+      }
+      
+      // Start AI processing with the uploaded file
+      setIsProcessing(false);
+      setAiProcessing(true);
+      toast.info("AI is analyzing your PDF...");
+      
+      const aiProcessResponse = await fetch("/api/ai-process", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,16 +69,16 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
         body: JSON.stringify({ filename: uploadData.filename }),
       });
 
-      if (!processResponse.ok) {
-        const data = await processResponse.json();
-        throw new Error(data.error || "Processing failed");
+      if (!aiProcessResponse.ok) {
+        const data = await aiProcessResponse.json();
+        throw new Error(data.error || "AI processing failed");
       }
 
-      const processData = await processResponse.json();
-      toast.success("PDF processed successfully");
+      const processData = await aiProcessResponse.json();
+      toast.success("PDF analyzed with AI successfully");
       
-      if (onFileSelect) {
-        onFileSelect(file);
+      if (onProcessComplete && processData.data) {
+        onProcessComplete(processData.data);
       }
     } catch (error) {
       console.error("Upload/Process error:", error);
@@ -76,9 +86,15 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
     } finally {
       setIsUploading(false);
       setIsProcessing(false);
+      setAiProcessing(false);
       event.target.value = ""; // Clear the input
     }
   };
+
+  const isLoading = isUploading || isProcessing || aiProcessing;
+  const loadingMessage = isUploading 
+    ? "Uploading..." 
+    : (aiProcessing ? "AI is analyzing your PDF..." : "Processing...");
 
   return (
     <div className="w-full max-w-xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
@@ -86,15 +102,15 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
         htmlFor="pdfUpload" 
         className="block text-lg font-medium text-gray-700 dark:text-gray-200 mb-4"
       >
-        Upload PDF
+        Upload PDF for AI Analysis
       </label>
       <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
         <div className="space-y-1 text-center">
-          {isUploading || isProcessing ? (
+          {isLoading ? (
             <div className="flex flex-col items-center">
               <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
               <p className="mt-2 text-sm text-gray-500">
-                {isUploading ? "Uploading..." : "Processing..."}
+                {loadingMessage}
               </p>
             </div>
           ) : (
@@ -123,10 +139,10 @@ export function PdfUpload({ onFileSelect }: PdfUploadProps) {
                     id="pdfUpload"
                     name="pdfUpload"
                     type="file"
-                    accept="application/pdf"
+                    accept="application/pdf,.pdf"
                     className="sr-only"
                     onChange={handleFileChange}
-                    disabled={isUploading || isProcessing}
+                    disabled={isLoading}
                   />
                 </label>
                 <p className="pl-1">or drag and drop</p>
