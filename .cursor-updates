@@ -11,6 +11,8 @@
 - Removed all PDF parsing libraries and simplified to basic AI prompts to resolve persistent PDF.js worker errors
 - Changed the default AI model from O1 to GPT-4o mini for cost efficiency.
 - Fixed issue with AI analysis results not displaying by improving error handling and adding robust data validation in PdfUpload component and aiPdfProcessor service.
+- Modified page.tsx to use HomePage component for displaying AI analysis from uploaded files.
+- Created a sample samba notation file for testing the AI analysis functionality.
 
 # SambaScribe Updates
 
