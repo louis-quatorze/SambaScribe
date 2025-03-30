@@ -10,6 +10,7 @@
 - Fixed PDF.js worker configuration by adding proper client/server setup and CDN worker source
 - Removed all PDF parsing libraries and simplified to basic AI prompts to resolve persistent PDF.js worker errors
 - Changed the default AI model from O1 to GPT-4o mini for cost efficiency.
+- Fixed issue with AI analysis results not displaying by improving error handling and adding robust data validation in PdfUpload component and aiPdfProcessor service.
 
 # SambaScribe Updates
 

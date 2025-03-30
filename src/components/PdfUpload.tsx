@@ -99,10 +99,30 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       }
 
       const processData = await aiProcessResponse.json();
+      console.log("AI Process Response:", processData);
       toast.success("File analyzed with AI successfully");
       
-      if (onProcessComplete && processData.data) {
-        onProcessComplete(processData.data);
+      // Ensure the response has the expected structure
+      const aiData = processData.data;
+      if (onProcessComplete && aiData && 
+          typeof aiData === 'object' &&
+          typeof aiData.filename === 'string' &&
+          typeof aiData.aiSummary === 'string' &&
+          Array.isArray(aiData.mnemonics)) {
+        console.log("Calling onProcessComplete with data:", aiData);
+        onProcessComplete(aiData);
+      } else {
+        console.error("Failed to process data correctly:", { 
+          hasOnProcessComplete: !!onProcessComplete, 
+          responseStructure: aiData ? 
+            { 
+              hasFilename: typeof aiData.filename === 'string',
+              hasAiSummary: typeof aiData.aiSummary === 'string',
+              hasMnemonics: Array.isArray(aiData.mnemonics)
+            } : 'No data',
+          processData
+        });
+        toast.error("AI analysis completed but result format is unexpected");
       }
     } catch (error) {
       console.error("Upload/Process error:", error);

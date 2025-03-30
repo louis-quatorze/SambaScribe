@@ -65,26 +65,69 @@ async function generateAIMnemonics(contextSummary: string): Promise<string[]> {
     - For a simple surdo pattern: "BUM-pause-BUM-pause"
     - For a caixa pattern: "chi-chi-chi-CHI-chi-chi-CHI"
     
-    Return a JSON-compatible array of strings with 5 different vocal mnemonics for different 
+    Return ONLY a JSON array of strings with 5 different vocal mnemonics for different 
     common samba instruments (surdo, caixa, repinique, tamborim, agogo).
+    The response must be a valid JSON array that can be parsed with JSON.parse().
   `;
   
   const response = await generateChatCompletion([
-    { role: "system", content: "You are an expert samba percussion teacher who creates helpful vocal mnemonics." },
+    { role: "system", content: "You are an expert samba percussion teacher who creates helpful vocal mnemonics. Return ONLY valid JSON arrays in your responses." },
     { role: "user", content: prompt }
   ], "O1");
   
+  console.log("Raw AI response for mnemonics:", response);
+  
   try {
-    // Try to parse as JSON array
-    const mnemonics = JSON.parse(response);
-    if (Array.isArray(mnemonics)) {
-      return mnemonics;
+    // Try to extract JSON array if it's wrapped in markdown code blocks
+    let jsonStr = response;
+    
+    // Handle markdown code blocks if present
+    if (response.includes("```json")) {
+      const match = response.match(/```json\s*([\s\S]*?)\s*```/);
+      if (match && match[1]) {
+        jsonStr = match[1].trim();
+      }
+    } else if (response.includes("```")) {
+      const match = response.match(/```\s*([\s\S]*?)\s*```/);
+      if (match && match[1]) {
+        jsonStr = match[1].trim();
+      }
     }
     
-    // If not an array but we got something, wrap it
-    return [response];
+    // Try to parse as JSON array
+    const mnemonics = JSON.parse(jsonStr);
+    
+    if (Array.isArray(mnemonics)) {
+      // Ensure all items are strings
+      const validMnemonics = mnemonics
+        .filter(item => typeof item === 'string')
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+      
+      if (validMnemonics.length > 0) {
+        console.log("Parsed mnemonics as array:", validMnemonics);
+        return validMnemonics;
+      }
+    }
+    
+    // If not a valid array or empty, provide fallback
+    console.warn("AI didn't return a valid array of strings, using fallback mnemonics");
+    return [
+      "Surdo: BUM - pause - BUM - pause",
+      "Caixa: chi-chi-chi-CHI-chi-chi-CHI",
+      "Repinique: para-papa-para-papa",
+      "Tamborim: chi-ka chi-ka chi-KA-KA",
+      "Agogo: TING-ting TING-ting"
+    ];
   } catch (e) {
-    // If parsing fails, just return as a single string
-    return [response];
+    console.error("Failed to parse mnemonics JSON:", e);
+    // Provide fallback mnemonics
+    return [
+      "Surdo: BUM - pause - BUM - pause",
+      "Caixa: chi-chi-chi-CHI-chi-chi-CHI",
+      "Repinique: para-papa-para-papa",
+      "Tamborim: chi-ka chi-ka chi-KA-KA",
+      "Agogo: TING-ting TING-ting"
+    ];
   }
 } 

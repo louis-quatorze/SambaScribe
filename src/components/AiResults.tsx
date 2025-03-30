@@ -11,7 +11,10 @@ interface AiResultsProps {
 export function AiResults({ data }: AiResultsProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics'>('summary');
 
+  console.log("AiResults component received data:", data);
+  
   if (!data) {
+    console.warn("AiResults received null/undefined data");
     return null;
   }
 

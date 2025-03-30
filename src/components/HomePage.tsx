@@ -10,6 +10,7 @@ export function HomePage() {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleProcessComplete = (data: AiNotationData) => {
+    console.log("HomePage received AI data:", data);
     setAiResults(data);
   };
 

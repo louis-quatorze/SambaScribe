@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const notationData = await aiProcessFile(filename);
+    console.log("API: Generated AI notation data:", notationData);
 
     return NextResponse.json({ 
       success: true,
