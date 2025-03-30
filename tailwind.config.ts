@@ -26,6 +26,7 @@ export default {
         shimmer: "shimmer 4s infinite",
         backgroundPositionSpin:
           "background-position-spin 3000ms infinite alternate",
+        "fade-in": "fade-in 0.5s ease-out forwards",
       },
       keyframes: {
         "accordion-down": {
@@ -35,6 +36,10 @@ export default {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
         meteor: {
           "0%": { transform: "rotate(215deg) translateX(0)", opacity: "1" },

@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PdfUpload } from "@/components/PdfUpload";
 import { AiResults } from "@/components/AiResults";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
 
 export function HomePage() {
   const [aiResults, setAiResults] = useState<AiNotationData | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleProcessComplete = (data: AiNotationData) => {
     setAiResults(data);
   };
+
+  // Scroll to results when they become available
+  useEffect(() => {
+    if (aiResults && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [aiResults]);
 
   return (
     <div className="min-h-screen flex flex-col relative">
@@ -31,7 +39,17 @@ export function HomePage() {
             </div>
             <PdfUpload onProcessComplete={handleProcessComplete} />
             
-            {aiResults && <AiResults data={aiResults} />}
+            {aiResults && (
+              <div 
+                ref={resultsRef}
+                className="w-full transition-all duration-300 animate-fade-in"
+              >
+                <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-4">
+                  AI Analysis Results
+                </h2>
+                <AiResults data={aiResults} />
+              </div>
+            )}
           </section>
         </div>
       </main>

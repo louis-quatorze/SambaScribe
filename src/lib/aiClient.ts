@@ -162,7 +162,7 @@ export function parseJsonResponse(response: string): any {
 
 export async function generateChatCompletion(
   messages: Array<{ role: "user" | "system" | "assistant"; content: string }>,
-  model: AIModel = "O1",
+  model: AIModel = "GPT_4O_MINI",
   additionalOptions: Partial<OpenAI.ChatCompletionCreateParamsNonStreaming> = {},
 ): Promise<string> {
   try {

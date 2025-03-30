@@ -15,6 +15,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [aiProcessing, setAiProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,13 +43,28 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
 
     try {
       setIsUploading(true);
+      setUploadProgress(0);
       const formData = new FormData();
       formData.append("file", file);
+
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 300);
 
       const uploadResponse = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
 
       if (!uploadResponse.ok) {
         const data = await uploadResponse.json();
@@ -60,6 +76,10 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       if (onFileSelect) {
         onFileSelect(file);
       }
+      
+      // Short delay to show upload complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setIsUploading(false);
       
       // Start AI processing with the uploaded file
       setAiProcessing(true);
@@ -90,13 +110,14 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
     } finally {
       setIsUploading(false);
       setAiProcessing(false);
+      setUploadProgress(0);
       event.target.value = ""; // Clear the input
     }
   };
 
   const isLoading = isUploading || aiProcessing;
   const loadingMessage = isUploading 
-    ? "Uploading..." 
+    ? `Uploading... ${uploadProgress}%` 
     : "AI is analyzing your file...";
 
   return (
@@ -115,6 +136,14 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               <p className="mt-2 text-sm text-gray-500">
                 {loadingMessage}
               </p>
+              {isUploading && (
+                <div className="w-48 mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 transition-all duration-300" 
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <>

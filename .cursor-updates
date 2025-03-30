@@ -9,3 +9,10 @@
 - Fixed PDF.js canvas dependency by installing canvas package and updating PDF processing implementation with proper worker initialization.
 - Fixed PDF.js worker configuration by adding proper client/server setup and CDN worker source
 - Removed all PDF parsing libraries and simplified to basic AI prompts to resolve persistent PDF.js worker errors
+- Changed the default AI model from O1 to GPT-4o mini for cost efficiency.
+
+# SambaScribe Updates
+
+- Fixed uploading spinner staying active after completion by adding progress indication and separating states between upload and AI processing
+- Enhanced AI results display with smooth scrolling to results, better visual presentation, and fade-in animations
+- Improved UI feedback during file processing with progress indicators and clearer status messages
