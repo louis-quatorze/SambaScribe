@@ -108,89 +108,32 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
         const processData = await aiProcessResponse.json();
         console.log("AI Process Response:", processData);
         
-        // Check if we have a valid response format first
-        if (!processData || typeof processData !== 'object') {
-          console.error("Invalid AI process response format:", processData);
-          toast.error("AI analysis completed but returned an invalid response format");
-          
-          // Use fallback data to avoid UI not showing any results
-          if (onProcessComplete) {
-            const fallbackData = {
-              filename: file.name,
-              aiSummary: "Analysis could not be completed due to a server error. Please try again later.",
-              mnemonics: [
-                "Error connecting to AI service",
-                "WebSocket connection failed",
-                "Try again in a few minutes",
-                "Server might be restarting",
-                "Contact support if the issue persists"
-              ]
-            };
-            onProcessComplete(fallbackData);
-          }
-          return;
-        }
-        
         toast.success("File analyzed with AI successfully");
         
-        // Ensure the response has the expected structure with more robust checking
+        // Simplified the response handling to directly utilize the data structure from the API response
         if (onProcessComplete && processData.data) {
-          const aiData = processData.data;
-          
-          console.log("Processing AI data:", aiData);
-          
-          if (typeof aiData === 'object' &&
-              typeof aiData.filename === 'string' &&
-              typeof aiData.aiSummary === 'string' &&
-              Array.isArray(aiData.mnemonics)) {
-            console.log("Calling onProcessComplete with data:", aiData);
-            onProcessComplete(aiData);
-          } else {
-            console.error("Failed to process data correctly:", { 
-              processData,
-              hasData: !!processData.data,
-              dataType: processData.data ? typeof processData.data : 'undefined',
-              responseStructure: aiData ? 
-                { 
-                  hasFilename: typeof aiData?.filename === 'string',
-                  hasAiSummary: typeof aiData?.aiSummary === 'string',
-                  hasMnemonics: Array.isArray(aiData?.mnemonics)
-                } : 'No data'
-            });
-            
-            // Create a fallback data structure to avoid UI errors
-            const fallbackData = {
-              filename: processData.data?.filename || "unknown-file",
-              aiSummary: processData.data?.aiSummary || "The file was analyzed but returned unexpected data. Please try another file.",
-              mnemonics: Array.isArray(processData.data?.mnemonics) ? 
-                processData.data.mnemonics : 
-                ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
-            };
-            
-            toast.warning("AI analysis completed with unexpected results");
-            onProcessComplete(fallbackData);
-          }
+          console.log("Calling onProcessComplete with data:", processData.data);
+          onProcessComplete(processData.data);
+        } else if (onProcessComplete && processData.success === false && processData.data) {
+          // Handle error case with error data
+          console.log("Using error fallback data:", processData.data);
+          onProcessComplete(processData.data);
         } else if (onProcessComplete) {
-          // If processData.data is missing but we need to call onProcessComplete
-          console.error("Missing data property in AI process response:", processData);
-          
-          // Try to use the processData directly if it has the right structure
-          if (typeof processData === 'object' && 
-              typeof processData.filename === 'string' && 
-              typeof processData.aiSummary === 'string' && 
-              Array.isArray(processData.mnemonics)) {
-            console.log("Using processData directly:", processData);
-            onProcessComplete(processData);
-          } else {
-            const fallbackData = {
-              filename: "error-processing",
-              aiSummary: "The file could not be analyzed correctly. Please try a different file or format.",
-              mnemonics: ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
-            };
-            console.error("Using fallback data due to missing or invalid data property");
-            toast.warning("AI analysis completed but data was in an unexpected format");
-            onProcessComplete(fallbackData);
-          }
+          // Fallback for unexpected response format
+          console.error("Unexpected API response format:", processData);
+          const fallbackData = {
+            filename: file.name,
+            aiSummary: "Analysis could not be completed in the expected format. Please try a different file.",
+            mnemonics: [
+              "Error processing the file",
+              "Please try again with a different file",
+              "Text files work best",
+              "Smaller files recommended",
+              "Contact support if needed"
+            ]
+          };
+          toast.warning("AI analysis completed but returned unexpected data format");
+          onProcessComplete(fallbackData);
         }
       } catch (aiError) {
         console.error("AI processing error:", aiError);
@@ -203,12 +146,12 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
         if (onProcessComplete) {
           const fallbackData = {
             filename: file.name,
-            aiSummary: "The AI service could not process your file due to a WebSocket connection failure. The app is looking for a tRPC WebSocket server at ws://localhost:3001 which is not running. This is needed for real-time updates and subscriptions.",
+            aiSummary: "The AI service could not process your file. This could be due to a connection issue or server error.",
             mnemonics: [
-              "Error: WebSocket connection to 'ws://localhost:3001/' failed",
-              "The tRPC WebSocket server needs to be running",
-              "Use 'npm run dev' in a separate terminal window to start it",
-              "Ensure port 3001 is not blocked by firewall",
+              "Error processing the file",
+              "Please try again later",
+              "The server may be temporarily unavailable",
+              "Ensure you're connected to the internet",
               "Contact support if the issue persists"
             ]
           };
@@ -248,11 +191,11 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
                 {loadingMessage}
               </p>
               {isUploading && (
-                <div className="w-48 mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-3 dark:bg-gray-700">
                   <div 
-                    className="h-full bg-blue-500 transition-all duration-300" 
+                    className="bg-blue-600 h-2.5 rounded-full" 
                     style={{ width: `${uploadProgress}%` }}
-                  />
+                  ></div>
                 </div>
               )}
             </div>
@@ -275,17 +218,16 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               <div className="flex text-sm text-gray-600 dark:text-gray-400">
                 <label
                   htmlFor="fileUpload"
-                  className="relative cursor-pointer rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                  className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none"
                 >
                   <span>Upload a file</span>
                   <input
                     id="fileUpload"
                     name="fileUpload"
                     type="file"
-                    accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
                     className="sr-only"
                     onChange={handleFileChange}
-                    disabled={isLoading}
+                    accept=".pdf,.txt,.md"
                   />
                 </label>
                 <p className="pl-1">or drag and drop</p>
@@ -293,8 +235,8 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 PDF or text files only, max 7MB
               </p>
-              <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
-                For best results with PDFs, convert complex files to text format or reduce file size.
+              <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
+                For best results with PDFs, convert complex files to text or reduce file size.
               </p>
             </>
           )}

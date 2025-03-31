@@ -11,27 +11,21 @@ interface AiResultsProps {
 export function AiResults({ data }: AiResultsProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics'>('summary');
 
-  // Add more extensive debug logging
+  // Add debug logging
   useEffect(() => {
-    console.log("AiResults component received data:", data);
-    console.log("Data type:", typeof data);
-    console.log("Has properties:", {
-      hasFilename: 'filename' in (data || {}),
-      hasAiSummary: 'aiSummary' in (data || {}),
-      hasMnemonics: 'mnemonics' in (data || {})
-    });
+    console.log("AiResults component rendered with data:", data);
   }, [data]);
   
-  // More robust null/undefined/invalid data checking
-  if (!data || typeof data !== 'object') {
-    console.warn("AiResults received null/undefined data");
+  // If data is not valid, render nothing
+  if (!data) {
+    console.warn("AiResults received no data");
     return null;
   }
 
   // Ensure required properties exist with fallbacks
   const safeData = {
-    filename: typeof data.filename === 'string' ? data.filename : 'unknown-file',
-    aiSummary: typeof data.aiSummary === 'string' ? data.aiSummary : 'No summary available',
+    filename: data.filename || 'unknown-file',
+    aiSummary: data.aiSummary || 'No summary available',
     mnemonics: Array.isArray(data.mnemonics) ? data.mnemonics : []
   };
 

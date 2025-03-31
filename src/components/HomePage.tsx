@@ -11,20 +11,14 @@ export function HomePage() {
 
   const handleProcessComplete = (data: AiNotationData) => {
     console.log("HomePage received AI data:", data);
-    if (!data || typeof data !== 'object') {
-      console.error("Invalid data received in handleProcessComplete", data);
+    
+    // Ensure we have valid data in the expected format
+    if (!data) {
+      console.error("No data received in handleProcessComplete");
       return;
     }
 
-    // Ensure we have a valid data structure
-    const validData: AiNotationData = {
-      filename: typeof data.filename === 'string' ? data.filename : 'unknown-file',
-      aiSummary: typeof data.aiSummary === 'string' ? data.aiSummary : 'No summary available',
-      mnemonics: Array.isArray(data.mnemonics) ? data.mnemonics : []
-    };
-
-    console.log("Setting aiResults with:", validData);
-    setAiResults(validData);
+    setAiResults(data);
   };
 
   // Scroll to results when they become available
@@ -48,10 +42,10 @@ export function HomePage() {
         <div className="flex-1 flex flex-col items-start justify-center bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950">
           <section className="max-w-7xl w-full space-y-8 animate-fade-in p-4">
             <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-              SambaScribe - AI Samba Notation Guide
+              SambaScribe - PDF to Mnemonic Converter
             </h1>
             <p className="text-center text-gray-600 dark:text-gray-400">
-              Upload a samba notation file for AI-powered analysis and mnemonic generation
+              Upload your Samba notation PDF to generate helpful mnemonics
             </p>
             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-md mt-4 max-w-xl mx-auto">
               <p className="text-sm text-yellow-600 dark:text-yellow-400 text-center">
@@ -65,6 +59,7 @@ export function HomePage() {
               <div 
                 ref={resultsRef}
                 className="w-full transition-all duration-300 animate-fade-in"
+                data-testid="ai-results-container"
               >
                 <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-4">
                   AI Analysis Results
