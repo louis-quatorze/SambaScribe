@@ -10,13 +10,7 @@ export default async function Page() {
       <main className="flex-1 flex flex-col w-full mx-auto">
         <ClientProvider>
           <div className="flex-1 flex items-start justify-center bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950">
-            <section className="max-w-7xl w-full space-y-8 animate-fade-in p-4">
-              <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-                SambaScribe - PDF to Mnemonic Converter
-              </h1>
-              <p className="text-center text-gray-600 dark:text-gray-400">
-                Upload your Samba notation PDF to generate helpful mnemonics
-              </p>
+            <section className="max-w-7xl w-full animate-fade-in p-4">
               <HomePage />
             </section>
           </div>

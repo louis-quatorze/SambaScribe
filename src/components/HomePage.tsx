@@ -53,12 +53,6 @@ export function HomePage() {
             <p className="text-center text-gray-600 dark:text-gray-400">
               Upload a samba notation file for AI-powered analysis and mnemonic generation
             </p>
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-md mt-4 max-w-xl mx-auto">
-              <p className="text-sm text-yellow-600 dark:text-yellow-400 text-center">
-                PDF parsing has been simplified to avoid technical errors.
-                The AI will provide general information based on the file name.
-              </p>
-            </div>
             <PdfUpload onProcessComplete={handleProcessComplete} />
             
             {aiResults && (
@@ -72,25 +66,6 @@ export function HomePage() {
           </section>
         </div>
       </main>
-
-      <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <span className="text-sm text-neutral-600 dark:text-neutral-400">
-            © {new Date().getFullYear()} All Rights Reserved
-          </span>
-          <div className="flex items-center gap-6 text-sm text-neutral-600 dark:text-neutral-400">
-            <a href="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400">
-              Privacy Policy
-            </a>
-            <a href="/terms" className="hover:text-blue-600 dark:hover:text-blue-400">
-              Terms of Service
-            </a>
-            <a href="/contact" className="hover:text-blue-600 dark:hover:text-blue-400">
-              Contact
-            </a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 } 

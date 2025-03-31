@@ -125,7 +125,7 @@ export function AiResults({ data }: AiResultsProps) {
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">PDF Content Verification</h2>
             <div className="prose dark:prose-invert max-w-none">
               <p className="text-gray-700 dark:text-gray-300">
-                The AI has analyzed the actual content of your PDF file. Here are elements detected in your document:
+                Some elements detected in your document:
               </p>
               
               {insights.quotedText.length > 0 && (
@@ -151,12 +151,6 @@ export function AiResults({ data }: AiResultsProps) {
                   </div>
                 </div>
               )}
-
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md mt-6">
-                <p className="text-sm text-green-700 dark:text-green-400">
-                  The above elements were identified by analyzing the actual content of your PDF, not just the filename.
-                </p>
-              </div>
             </div>
           </div>
         )}

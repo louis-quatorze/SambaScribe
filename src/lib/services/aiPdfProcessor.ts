@@ -47,7 +47,9 @@ Include the following types of information if present:
 - Tempo markings
 - Dynamic markings (forte, piano, etc.)
 - Performance instructions
-- Section labels (A, B, intro, coda, etc.)`,
+- Section labels (A, B, intro, coda, etc.)
+
+IMPORTANT: Format key instruments, patterns, or technical terms by wrapping them in double asterisks for emphasis (e.g., **surdo**, **tamborim**, **butterfly break**). This will make important terms stand out in the summary.`,
 
   // Mnemonics examples
   MNEMONICS_EXAMPLES: `
@@ -114,6 +116,25 @@ const FALLBACK_MNEMONICS = [
   "BOOM pa BOOM pa"
 ];
 
+/**
+ * Convert markdown-style bold formatting to HTML bold tags
+ * Replaces **text** with <b>text</b>
+ */
+function formatSummaryAsHtml(summary: string): string {
+  if (!summary) return '';
+  
+  // Replace **text** with <b>text</b>
+  // The regex matches ** followed by any characters (non-greedy) until the next **
+  const formattedSummary = summary.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  
+  // Handle case where text is already in HTML format (don't double-convert)
+  if (summary.includes('<b>') && !summary.includes('**')) {
+    return summary;
+  }
+  
+  return formattedSummary;
+}
+
 export async function aiProcessFile(filename: string): Promise<AiNotationData> {
   try {
     if (!filename || typeof filename !== 'string') {
@@ -149,12 +170,15 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
     }
     
     // Generate AI summary based on the file content
-    const aiSummary = await generateAISummary(
+    let aiSummary = await generateAISummary(
       filename, 
       fileType, 
       isPdf ? pdfBase64 : fileContent, 
       isPdf
     );
+    
+    // Format the summary to convert markdown bold to HTML bold
+    aiSummary = formatSummaryAsHtml(aiSummary);
     
     // Pattern detection - check for pattern names in filename, content and AI summary
     const patternDetectors = {
@@ -265,7 +289,7 @@ Based on this file, provide a concise summary (under 100 words) of what this not
 
 ${PROMPT_TEMPLATES.SUMMARY_REQUEST}
 
-IMPORTANT: Include at least 3-4 specific elements or terms you found in the PDF (such as specific breaks, pattern names, or musical instructions). Put these terms in quotes to clearly identify them as direct content from the PDF.
+IMPORTANT: Include at least 3-4 specific elements or terms you found in the PDF (such as specific breaks, pattern names, or musical instructions). Put these terms in quotes AND format important terms by wrapping them in double asterisks (e.g., **"surdo"**, **"butterfly break"**) to highlight key terminology.
 
 Keep the summary informative and highlight the most important aspects of the notation for a samba drummer.`;
 
@@ -286,7 +310,7 @@ Please provide a concise summary (under 100 words) of this notation.
 
 ${PROMPT_TEMPLATES.SUMMARY_REQUEST}
 
-IMPORTANT: Include at least 3-4 specific elements or terms you found in the text (put these in quotes) to demonstrate you're analyzing the actual content.`;
+IMPORTANT: Include at least 3-4 specific elements or terms you found in the text. Format important terms by wrapping them in double asterisks (e.g., **surdo**, **butterfly break**) to highlight key terminology.`;
 
       const result = await generateChatCompletion([
         { role: "system", content: PROMPT_TEMPLATES.SYSTEM_SUMMARY },

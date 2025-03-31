@@ -295,9 +295,6 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 PDF or text files only, max 7MB
               </p>
-              <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
-                For best results with PDFs, convert complex files to text format or reduce file size.
-              </p>
             </>
           )}
         </div>
