@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
 import { FileText, BookOpen } from "lucide-react";
 
@@ -11,12 +11,29 @@ interface AiResultsProps {
 export function AiResults({ data }: AiResultsProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics'>('summary');
 
-  console.log("AiResults component received data:", data);
+  // Add more extensive debug logging
+  useEffect(() => {
+    console.log("AiResults component received data:", data);
+    console.log("Data type:", typeof data);
+    console.log("Has properties:", {
+      hasFilename: 'filename' in (data || {}),
+      hasAiSummary: 'aiSummary' in (data || {}),
+      hasMnemonics: 'mnemonics' in (data || {})
+    });
+  }, [data]);
   
-  if (!data) {
+  // More robust null/undefined/invalid data checking
+  if (!data || typeof data !== 'object') {
     console.warn("AiResults received null/undefined data");
     return null;
   }
+
+  // Ensure required properties exist with fallbacks
+  const safeData = {
+    filename: typeof data.filename === 'string' ? data.filename : 'unknown-file',
+    aiSummary: typeof data.aiSummary === 'string' ? data.aiSummary : 'No summary available',
+    mnemonics: Array.isArray(data.mnemonics) ? data.mnemonics : []
+  };
 
   return (
     <div className="w-full max-w-3xl mx-auto my-8 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 transform transition-all duration-300">
@@ -52,7 +69,7 @@ export function AiResults({ data }: AiResultsProps) {
           <div className="space-y-4 animate-fade-in">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">AI Analysis</h2>
             <div className="prose dark:prose-invert max-w-none">
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">{data.aiSummary}</p>
+              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">{safeData.aiSummary}</p>
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
               <p className="text-sm text-blue-600 dark:text-blue-400">
@@ -66,9 +83,9 @@ export function AiResults({ data }: AiResultsProps) {
         {activeTab === 'mnemonics' && (
           <div className="space-y-4 animate-fade-in">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">AI-Generated Mnemonics</h2>
-            {data.mnemonics.length > 0 ? (
+            {safeData.mnemonics.length > 0 ? (
               <ul className="space-y-3 text-gray-700 dark:text-gray-300">
-                {data.mnemonics.map((mnemonic, i) => (
+                {safeData.mnemonics.map((mnemonic, i) => (
                   <li key={i} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-md shadow-sm border border-gray-100 dark:border-gray-600 hover:shadow-md transition-shadow">
                     {mnemonic}
                   </li>

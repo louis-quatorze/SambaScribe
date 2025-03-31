@@ -116,29 +116,64 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       
       toast.success("File analyzed with AI successfully");
       
-      // Ensure the response has the expected structure
-      const aiData = processData.data;
-      if (onProcessComplete && aiData && 
-          typeof aiData === 'object' &&
-          typeof aiData.filename === 'string' &&
-          typeof aiData.aiSummary === 'string' &&
-          Array.isArray(aiData.mnemonics)) {
-        console.log("Calling onProcessComplete with data:", aiData);
-        onProcessComplete(aiData);
-      } else {
-        // More detailed error logging
-        console.error("Failed to process data correctly:", { 
-          processData,
-          hasData: !!processData.data,
-          dataType: processData.data ? typeof processData.data : 'undefined',
-          responseStructure: aiData ? 
-            { 
-              hasFilename: typeof aiData?.filename === 'string',
-              hasAiSummary: typeof aiData?.aiSummary === 'string',
-              hasMnemonics: Array.isArray(aiData?.mnemonics)
-            } : 'No data'
-        });
-        toast.error("AI analysis completed but the response format is invalid");
+      // Ensure the response has the expected structure with more robust checking
+      if (onProcessComplete && processData.data) {
+        const aiData = processData.data;
+        
+        console.log("Processing AI data:", aiData);
+        
+        if (typeof aiData === 'object' &&
+            typeof aiData.filename === 'string' &&
+            typeof aiData.aiSummary === 'string' &&
+            Array.isArray(aiData.mnemonics)) {
+          console.log("Calling onProcessComplete with data:", aiData);
+          onProcessComplete(aiData);
+        } else {
+          console.error("Failed to process data correctly:", { 
+            processData,
+            hasData: !!processData.data,
+            dataType: processData.data ? typeof processData.data : 'undefined',
+            responseStructure: aiData ? 
+              { 
+                hasFilename: typeof aiData?.filename === 'string',
+                hasAiSummary: typeof aiData?.aiSummary === 'string',
+                hasMnemonics: Array.isArray(aiData?.mnemonics)
+              } : 'No data'
+          });
+          
+          // Create a fallback data structure to avoid UI errors
+          const fallbackData = {
+            filename: processData.data?.filename || "unknown-file",
+            aiSummary: processData.data?.aiSummary || "The file was analyzed but returned unexpected data. Please try another file.",
+            mnemonics: Array.isArray(processData.data?.mnemonics) ? 
+              processData.data.mnemonics : 
+              ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+          };
+          
+          toast.warning("AI analysis completed with unexpected results");
+          onProcessComplete(fallbackData);
+        }
+      } else if (onProcessComplete) {
+        // If processData.data is missing but we need to call onProcessComplete
+        console.error("Missing data property in AI process response:", processData);
+        
+        // Try to use the processData directly if it has the right structure
+        if (typeof processData === 'object' && 
+            typeof processData.filename === 'string' && 
+            typeof processData.aiSummary === 'string' && 
+            Array.isArray(processData.mnemonics)) {
+          console.log("Using processData directly:", processData);
+          onProcessComplete(processData);
+        } else {
+          const fallbackData = {
+            filename: "error-processing",
+            aiSummary: "The file could not be analyzed correctly. Please try a different file or format.",
+            mnemonics: ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+          };
+          console.error("Using fallback data due to missing or invalid data property");
+          toast.warning("AI analysis completed but data was in an unexpected format");
+          onProcessComplete(fallbackData);
+        }
       }
     } catch (error) {
       console.error("Upload/Process error:", error);

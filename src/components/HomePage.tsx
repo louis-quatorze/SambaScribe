@@ -11,14 +11,35 @@ export function HomePage() {
 
   const handleProcessComplete = (data: AiNotationData) => {
     console.log("HomePage received AI data:", data);
-    setAiResults(data);
+    if (!data || typeof data !== 'object') {
+      console.error("Invalid data received in handleProcessComplete", data);
+      return;
+    }
+
+    // Ensure we have a valid data structure
+    const validData: AiNotationData = {
+      filename: typeof data.filename === 'string' ? data.filename : 'unknown-file',
+      aiSummary: typeof data.aiSummary === 'string' ? data.aiSummary : 'No summary available',
+      mnemonics: Array.isArray(data.mnemonics) ? data.mnemonics : []
+    };
+
+    console.log("Setting aiResults with:", validData);
+    setAiResults(validData);
   };
 
   // Scroll to results when they become available
   useEffect(() => {
     if (aiResults && resultsRef.current) {
-      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      console.log("Scrolling to results");
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     }
+  }, [aiResults]);
+
+  // Debug log when component mounts or aiResults changes
+  useEffect(() => {
+    console.log("HomePage aiResults state:", aiResults);
   }, [aiResults]);
 
   return (
@@ -40,7 +61,7 @@ export function HomePage() {
             </div>
             <PdfUpload onProcessComplete={handleProcessComplete} />
             
-            {aiResults && (
+            {aiResults ? (
               <div 
                 ref={resultsRef}
                 className="w-full transition-all duration-300 animate-fade-in"
@@ -50,7 +71,7 @@ export function HomePage() {
                 </h2>
                 <AiResults data={aiResults} />
               </div>
-            )}
+            ) : null}
           </section>
         </div>
       </main>
