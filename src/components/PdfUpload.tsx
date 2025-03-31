@@ -119,11 +119,11 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               filename: file.name,
               aiSummary: "Analysis could not be completed due to a server error. Please try again later.",
               mnemonics: [
-                "Error connecting to AI service",
-                "WebSocket connection failed",
-                "Try again in a few minutes",
-                "Server might be restarting",
-                "Contact support if the issue persists"
+                { text: "Error connecting to AI service", pattern: "Error", description: "connection issue" },
+                { text: "WebSocket connection failed", pattern: "Error", description: "network error" },
+                { text: "Try again in a few minutes", pattern: "Tip", description: "retry recommendation" },
+                { text: "Server might be restarting", pattern: "Info", description: "server status" },
+                { text: "Contact support if the issue persists", pattern: "Support", description: "get help" }
               ]
             };
             onProcessComplete(fallbackData);
@@ -165,7 +165,13 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
                 aiSummary: processData.data?.aiSummary || "The file was analyzed but returned unexpected data. Please try another file.",
                 mnemonics: Array.isArray(processData.data?.mnemonics) ? 
                   processData.data.mnemonics : 
-                  ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+                  [
+                    { text: "Error in processing", pattern: "Error", description: "data format issue" },
+                    { text: "Please try again", pattern: "Error", description: "retry recommendation" },
+                    { text: "Text files work best", pattern: "Tip", description: "file format recommendation" },
+                    { text: "Smaller files recommended", pattern: "Tip", description: "file size recommendation" },
+                    { text: "Contact support if needed", pattern: "Support", description: "get help" }
+                  ]
               };
               
               toast.warning("AI analysis completed with unexpected results");
@@ -186,7 +192,13 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               const fallbackData = {
                 filename: "error-processing",
                 aiSummary: "The file could not be analyzed correctly. Please try a different file or format.",
-                mnemonics: ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+                mnemonics: [
+                  { text: "Error in processing", pattern: "Error", description: "processing failure" },
+                  { text: "Please try again", pattern: "Error", description: "retry recommendation" },
+                  { text: "Text files work best", pattern: "Tip", description: "file format recommendation" },
+                  { text: "Smaller files recommended", pattern: "Tip", description: "file size recommendation" },
+                  { text: "Contact support if needed", pattern: "Support", description: "get help" }
+                ]
               };
               console.error("Using fallback data due to missing or invalid data property");
               toast.warning("AI analysis completed but data was in an unexpected format");
@@ -207,11 +219,11 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
             filename: file.name,
             aiSummary: "The AI service could not process your file due to a WebSocket connection failure. The app is looking for a tRPC WebSocket server at ws://localhost:3001 which is not running. This is needed for real-time updates and subscriptions.",
             mnemonics: [
-              "Error: WebSocket connection to 'ws://localhost:3001/' failed",
-              "The tRPC WebSocket server needs to be running",
-              "Use 'npm run dev' in a separate terminal window to start it",
-              "Ensure port 3001 is not blocked by firewall",
-              "Contact support if the issue persists"
+              { text: "Error: WebSocket connection to 'ws://localhost:3001/' failed", pattern: "Error", description: "connection error" },
+              { text: "The tRPC WebSocket server needs to be running", pattern: "Error", description: "server requirement" },
+              { text: "Use 'npm run dev' in a separate terminal window to start it", pattern: "Tip", description: "solution recommendation" },
+              { text: "Ensure port 3001 is not blocked by firewall", pattern: "Tip", description: "network recommendation" },
+              { text: "Contact support if the issue persists", pattern: "Support", description: "get help" }
             ]
           };
           onProcessComplete(fallbackData);

@@ -16,7 +16,11 @@ export async function POST(request: NextRequest) {
         data: {
           filename: "unknown",
           aiSummary: "No valid filename was provided for processing.",
-          mnemonics: ["Please provide a valid file", "Ensure the file is uploaded correctly", "Try again with a different file"]
+          mnemonics: [
+            { text: "Please provide a valid file", pattern: "Error", description: "missing filename" },
+            { text: "Ensure the file is uploaded correctly", pattern: "Error", description: "file upload issue" },
+            { text: "Try again with a different file", pattern: "Error", description: "file format issue" }
+          ]
         }
       }, { status: 400 });
     }
@@ -38,11 +42,11 @@ export async function POST(request: NextRequest) {
           filename: filename,
           aiSummary: "Failed to process the file. The system encountered an error.",
           mnemonics: [
-            "Error in processing",
-            "Please try again with a different file",
-            "Text files work best",
-            "Reduce file size if using PDF",
-            "Contact support if issue persists"
+            { text: "Error in processing", pattern: "Error", description: "processing failure" },
+            { text: "Please try again with a different file", pattern: "Error", description: "file format issue" },
+            { text: "Text files work best", pattern: "Tip", description: "file format recommendation" },
+            { text: "Reduce file size if using PDF", pattern: "Tip", description: "file size recommendation" },
+            { text: "Contact support if issue persists", pattern: "Support", description: "get help" }
           ]
         }
       });
@@ -73,11 +77,11 @@ export async function POST(request: NextRequest) {
         filename: requestData?.filename || "unknown-file",
         aiSummary: "An error occurred during processing. Please try again with a different file.",
         mnemonics: [
-          "Error in processing",
-          "Please try again",
-          "Use smaller files",
-          "Text format preferred",
-          "Contact support if needed"
+          { text: "Error in processing", pattern: "Error", description: "processing failure" },
+          { text: "Please try again", pattern: "Error", description: "retry recommendation" },
+          { text: "Use smaller files", pattern: "Tip", description: "file size recommendation" },
+          { text: "Text format preferred", pattern: "Tip", description: "file format recommendation" },
+          { text: "Contact support if needed", pattern: "Support", description: "get help" }
         ]
       }
     });

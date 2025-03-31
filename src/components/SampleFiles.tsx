@@ -78,7 +78,11 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
           const fallbackData = {
             filename: file.filename,
             aiSummary: "The file was analyzed but returned unexpected data. Please try another file.",
-            mnemonics: ["Error in processing", "Please try again", "Contact support if needed"]
+            mnemonics: [
+              { text: "Error in processing", pattern: "Error", description: "unexpected data format" },
+              { text: "Please try again", pattern: "Error", description: "retry recommended" },
+              { text: "Contact support if needed", pattern: "Support", description: "get help" }
+            ]
           };
           
           toast.warning("AI analysis completed with unexpected results");
@@ -94,9 +98,9 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
           filename: file.filename,
           aiSummary: "The AI service could not process the file. This could be due to a connection issue or server error.",
           mnemonics: [
-            "Error processing file",
-            "Try again later",
-            "Contact support if the issue persists"
+            { text: "Error processing file", pattern: "Error", description: "service error" },
+            { text: "Try again later", pattern: "Error", description: "temporary failure" },
+            { text: "Contact support if the issue persists", pattern: "Support", description: "get help" }
           ]
         };
         onProcessComplete(fallbackData);

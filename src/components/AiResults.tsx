@@ -113,7 +113,21 @@ export function AiResults({ data }: AiResultsProps) {
               <ul className="space-y-3 text-gray-700 dark:text-gray-300">
                 {safeData.mnemonics.map((mnemonic, i) => (
                   <li key={i} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-md shadow-sm border border-gray-100 dark:border-gray-600 hover:shadow-md transition-shadow">
-                    {mnemonic}
+                    <div className="flex flex-col">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          {typeof mnemonic === 'object' && mnemonic?.pattern ? mnemonic.pattern : 'Pattern'}
+                        </span>
+                        {typeof mnemonic === 'object' && mnemonic?.description && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                            {mnemonic.description}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-lg">
+                        {typeof mnemonic === 'object' && mnemonic?.text ? mnemonic.text : String(mnemonic)}
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>

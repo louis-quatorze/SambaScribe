@@ -6,18 +6,50 @@ import { existsSync } from 'fs';
 export interface AiNotationData {
   filename: string;
   aiSummary: string;
-  mnemonics: string[];
+  mnemonics: Array<{
+    text: string;
+    pattern?: string;
+    description?: string;
+  }>;
 }
 
 // Special mnemonics for specific patterns
 const specialMnemonics = {
-  'entrada': 'Entrada: "LET-me-IN-to-the-PAR-ty" (entrance pattern)',
-  'paradiddle': 'Paradiddle: "pa-ra-di-dle pa-ra-di-dle" (alternating hands)',
-  'surdo1': 'Surdo 1: "BOOM --- BOOM ---" (strong beats on 1 and 3)',
-  'surdo2': 'Surdo 2: "--- BOOM --- BOOM" (strong beats on 2 and 4)',
-  'caixa': 'Caixa: "ta-ka ta-ka-ta ta-ka ta-ka-ta" (sixteenth note pattern)',
-  'repinique': 'Repinique: "din-din-din DOOM KA" (call pattern)',
-  'tamborim': 'Tamborim: "TIC-a-tic-a-TIC-a-tic-a" (teleco-teco pattern)'
+  'entrada': { 
+    text: 'LET-me-IN-to-the-PAR-ty', 
+    pattern: 'Entrada', 
+    description: 'entrance pattern'
+  },
+  'paradiddle': { 
+    text: 'pa-ra-di-dle pa-ra-di-dle', 
+    pattern: 'Paradiddle', 
+    description: 'alternating hands' 
+  },
+  'surdo1': { 
+    text: 'BOOM --- BOOM ---', 
+    pattern: 'Surdo 1', 
+    description: 'strong beats on 1 and 3' 
+  },
+  'surdo2': { 
+    text: 'BOOM --- BOOM ---', 
+    pattern: 'Surdo 2', 
+    description: 'strong beats on 2 and 4' 
+  },
+  'caixa': { 
+    text: 'ta-ka ta-ka-ta ta-ka ta-ka-ta', 
+    pattern: 'Caixa', 
+    description: 'sixteenth note pattern' 
+  },
+  'repinique': { 
+    text: 'din-din-din DOOM KA', 
+    pattern: 'Repinique', 
+    description: 'call pattern' 
+  },
+  'tamborim': { 
+    text: 'TIC-a-tic-a-TIC-a-tic-a', 
+    pattern: 'Tamborim', 
+    description: 'teleco-teco pattern' 
+  }
 };
 
 // Common prompt templates for AI calls
@@ -107,11 +139,11 @@ Example response format:
 
 // Fallback mnemonics when AI generation fails
 const FALLBACK_MNEMONICS = [
-  "DUM ka DUM ka",
-  "BOOM chk BOOM chk",
-  "DUM DUM PA pa",
-  "TA ki TA ki TA",
-  "BOOM pa BOOM pa"
+  { text: "DUM ka DUM ka", pattern: "Basic Pattern", description: "even quarter notes" },
+  { text: "BOOM chk BOOM chk", pattern: "Basic Pattern", description: "alternating strong and weak beats" },
+  { text: "DUM DUM PA pa", pattern: "Basic Pattern", description: "accented pattern" },
+  { text: "TA ki TA ki TA", pattern: "Basic Pattern", description: "syncopated rhythm" },
+  { text: "BOOM pa BOOM pa", pattern: "Basic Pattern", description: "surdo-like pattern" }
 ];
 
 /**
@@ -246,7 +278,7 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
         // Add the special mnemonic at the beginning and filter out any duplicates
         mnemonics = [
           specialMnemonics[pattern as keyof typeof specialMnemonics],
-          ...mnemonics.filter(m => !m.toLowerCase().includes(pattern.toLowerCase()))
+          ...mnemonics.filter(m => !m.text.toLowerCase().includes(pattern.toLowerCase()))
         ];
       }
     }
@@ -334,7 +366,7 @@ async function generateAIMnemonics(
   summary: string, 
   content: string, 
   isPdf: boolean
-): Promise<string[]> {
+): Promise<Array<{ text: string; pattern?: string; description?: string }>> {
   try {
     let response: string;
     const mnemonicsPromptBase = `
@@ -394,23 +426,32 @@ ${mnemonicsPromptBase}`;
       // Find anything that looks like a JSON array
       const jsonMatch = response.match(/\[\s*"[^"]*"(?:\s*,\s*"[^"]*")*\s*\]/);
       if (jsonMatch) {
-        const mnemonics = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(mnemonics) && mnemonics.length > 0) {
-          console.log('Extracted mnemonics:', mnemonics);
-          return mnemonics.slice(0, 5);
+        const rawMnemonics = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(rawMnemonics) && rawMnemonics.length > 0) {
+          console.log('Extracted mnemonics:', rawMnemonics);
+          // Convert string array to object array with default pattern
+          return rawMnemonics.slice(0, 5).map(text => ({
+            text,
+            pattern: "Rhythm Pattern",
+            description: "detected pattern"
+          }));
         }
       }
       
       // If we can't find a proper JSON array but can extract strings, build an array
       const stringMatches = response.match(/"([^"]*)"/g);
       if (stringMatches && stringMatches.length > 0) {
-        const mnemonics = stringMatches
+        const rawMnemonics = stringMatches
           .map(match => match.replace(/"/g, ''))
           .filter(Boolean);
         
-        if (mnemonics.length > 0) {
-          console.log('Extracted mnemonics from strings:', mnemonics);
-          return mnemonics.slice(0, 5);
+        if (rawMnemonics.length > 0) {
+          console.log('Extracted mnemonics from strings:', rawMnemonics);
+          return rawMnemonics.slice(0, 5).map(text => ({
+            text,
+            pattern: "Rhythm Pattern", 
+            description: "detected pattern"
+          }));
         }
       }
     } catch (parseError) {
@@ -421,7 +462,7 @@ ${mnemonicsPromptBase}`;
     console.warn('Using fallback mnemonics');
     return FALLBACK_MNEMONICS;
   } catch (error) {
-    console.error('Failed to generate mnemonics:', error);
+    console.error('AI mnemonics generation error:', error);
     return FALLBACK_MNEMONICS;
   }
 } 
