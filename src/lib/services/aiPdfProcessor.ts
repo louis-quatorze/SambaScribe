@@ -85,7 +85,18 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
     };
   } catch (error) {
     console.error('AI processing error:', error);
-    throw error instanceof Error ? error : new Error('Failed to process file with AI');
+    // Instead of throwing, return a fallback response with error information
+    return {
+      filename: filename || 'unknown-file',
+      aiSummary: `Unable to analyze file. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      mnemonics: [
+        "Error occurred during processing",
+        "Please try again with a different file",
+        "Or try a smaller PDF file",
+        "Text files work best for analysis",
+        "Contact support if problem persists"
+      ]
+    };
   }
 }
 

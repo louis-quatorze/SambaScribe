@@ -106,6 +106,14 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
 
       const processData = await aiProcessResponse.json();
       console.log("AI Process Response:", processData);
+      
+      // Check if we have a valid response format first
+      if (!processData || typeof processData !== 'object') {
+        console.error("Invalid AI process response format:", processData);
+        toast.error("AI analysis completed but returned an invalid response format");
+        return;
+      }
+      
       toast.success("File analyzed with AI successfully");
       
       // Ensure the response has the expected structure
@@ -118,17 +126,19 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
         console.log("Calling onProcessComplete with data:", aiData);
         onProcessComplete(aiData);
       } else {
+        // More detailed error logging
         console.error("Failed to process data correctly:", { 
-          hasOnProcessComplete: !!onProcessComplete, 
+          processData,
+          hasData: !!processData.data,
+          dataType: processData.data ? typeof processData.data : 'undefined',
           responseStructure: aiData ? 
             { 
-              hasFilename: typeof aiData.filename === 'string',
-              hasAiSummary: typeof aiData.aiSummary === 'string',
-              hasMnemonics: Array.isArray(aiData.mnemonics)
-            } : 'No data',
-          processData
+              hasFilename: typeof aiData?.filename === 'string',
+              hasAiSummary: typeof aiData?.aiSummary === 'string',
+              hasMnemonics: Array.isArray(aiData?.mnemonics)
+            } : 'No data'
         });
-        toast.error("AI analysis completed but result format is unexpected");
+        toast.error("AI analysis completed but the response format is invalid");
       }
     } catch (error) {
       console.error("Upload/Process error:", error);
