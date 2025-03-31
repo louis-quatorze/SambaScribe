@@ -78,7 +78,6 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       }
 
       const uploadData = await uploadResponse.json();
-      console.log("Upload Response:", uploadData);
       
       if (onFileSelect) {
         onFileSelect(file);
@@ -93,7 +92,6 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       toast.info("AI is analyzing your file...");
       
       try {
-        console.log("Sending AI process request for file:", uploadData.filename);
         const aiProcessResponse = await fetch("/api/ai-process", {
           method: "POST",
           headers: {
@@ -110,40 +108,87 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
         const processData = await aiProcessResponse.json();
         console.log("AI Process Response:", processData);
         
-        toast.success("File analyzed with AI successfully");
-        
-        if (onProcessComplete) {
-          // Check if the data is directly in processData or in processData.data
-          if (processData.data && 
-              typeof processData.data.filename === 'string' && 
-              typeof processData.data.aiSummary === 'string' && 
-              Array.isArray(processData.data.mnemonics)) {
-            console.log("Using data from processData.data:", processData.data);
-            onProcessComplete(processData.data);
-          } 
-          // If data is directly in the root of processData
-          else if (typeof processData.filename === 'string' && 
-                   typeof processData.aiSummary === 'string' && 
-                   Array.isArray(processData.mnemonics)) {
-            console.log("Using data directly from processData:", processData);
-            onProcessComplete(processData);
-          }
-          // Otherwise use fallback
-          else {
-            console.error("Invalid response format:", processData);
+        // Check if we have a valid response format first
+        if (!processData || typeof processData !== 'object') {
+          console.error("Invalid AI process response format:", processData);
+          toast.error("AI analysis completed but returned an invalid response format");
+          
+          // Use fallback data to avoid UI not showing any results
+          if (onProcessComplete) {
             const fallbackData = {
               filename: file.name,
-              aiSummary: "The file was analyzed but returned in an unexpected format. Please try again.",
+              aiSummary: "Analysis could not be completed due to a server error. Please try again later.",
               mnemonics: [
-                "Error in data format",
-                "Try different file type",
-                "Text files work best",
-                "Ensure file isn't corrupted",
-                "Contact support if needed"
+                "Error connecting to AI service",
+                "WebSocket connection failed",
+                "Try again in a few minutes",
+                "Server might be restarting",
+                "Contact support if the issue persists"
               ]
             };
-            console.log("Using fallback data:", fallbackData);
-            toast.warning("AI analysis completed with unexpected data format");
+            onProcessComplete(fallbackData);
+          }
+          return;
+        }
+        
+        toast.success("File analyzed with AI successfully");
+        
+        // Ensure the response has the expected structure with more robust checking
+        if (onProcessComplete && processData.data) {
+          const aiData = processData.data;
+          
+          console.log("Processing AI data:", aiData);
+          
+          if (typeof aiData === 'object' &&
+              typeof aiData.filename === 'string' &&
+              typeof aiData.aiSummary === 'string' &&
+              Array.isArray(aiData.mnemonics)) {
+            console.log("Calling onProcessComplete with data:", aiData);
+            onProcessComplete(aiData);
+          } else {
+            console.error("Failed to process data correctly:", { 
+              processData,
+              hasData: !!processData.data,
+              dataType: processData.data ? typeof processData.data : 'undefined',
+              responseStructure: aiData ? 
+                { 
+                  hasFilename: typeof aiData?.filename === 'string',
+                  hasAiSummary: typeof aiData?.aiSummary === 'string',
+                  hasMnemonics: Array.isArray(aiData?.mnemonics)
+                } : 'No data'
+            });
+            
+            // Create a fallback data structure to avoid UI errors
+            const fallbackData = {
+              filename: processData.data?.filename || "unknown-file",
+              aiSummary: processData.data?.aiSummary || "The file was analyzed but returned unexpected data. Please try another file.",
+              mnemonics: Array.isArray(processData.data?.mnemonics) ? 
+                processData.data.mnemonics : 
+                ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+            };
+            
+            toast.warning("AI analysis completed with unexpected results");
+            onProcessComplete(fallbackData);
+          }
+        } else if (onProcessComplete) {
+          // If processData.data is missing but we need to call onProcessComplete
+          console.error("Missing data property in AI process response:", processData);
+          
+          // Try to use the processData directly if it has the right structure
+          if (typeof processData === 'object' && 
+              typeof processData.filename === 'string' && 
+              typeof processData.aiSummary === 'string' && 
+              Array.isArray(processData.mnemonics)) {
+            console.log("Using processData directly:", processData);
+            onProcessComplete(processData);
+          } else {
+            const fallbackData = {
+              filename: "error-processing",
+              aiSummary: "The file could not be analyzed correctly. Please try a different file or format.",
+              mnemonics: ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+            };
+            console.error("Using fallback data due to missing or invalid data property");
+            toast.warning("AI analysis completed but data was in an unexpected format");
             onProcessComplete(fallbackData);
           }
         }
@@ -158,16 +203,15 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
         if (onProcessComplete) {
           const fallbackData = {
             filename: file.name,
-            aiSummary: "The AI service could not process your file. This could be due to a connection issue or server error.",
+            aiSummary: "The AI service could not process your file due to a WebSocket connection failure. The app is looking for a tRPC WebSocket server at ws://localhost:3001 which is not running. This is needed for real-time updates and subscriptions.",
             mnemonics: [
-              "Error processing the file",
-              "Please try again later",
-              "The server may be temporarily unavailable",
-              "Ensure you're connected to the internet",
+              "Error: WebSocket connection to 'ws://localhost:3001/' failed",
+              "The tRPC WebSocket server needs to be running",
+              "Use 'npm run dev' in a separate terminal window to start it",
+              "Ensure port 3001 is not blocked by firewall",
               "Contact support if the issue persists"
             ]
           };
-          console.log("Using error fallback data:", fallbackData);
           onProcessComplete(fallbackData);
         }
       }
@@ -204,11 +248,11 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
                 {loadingMessage}
               </p>
               {isUploading && (
-                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-3 dark:bg-gray-700">
+                <div className="w-48 mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div 
-                    className="bg-blue-600 h-2.5 rounded-full" 
+                    className="h-full bg-blue-500 transition-all duration-300" 
                     style={{ width: `${uploadProgress}%` }}
-                  ></div>
+                  />
                 </div>
               )}
             </div>
@@ -231,16 +275,17 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               <div className="flex text-sm text-gray-600 dark:text-gray-400">
                 <label
                   htmlFor="fileUpload"
-                  className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none"
+                  className="relative cursor-pointer rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
                 >
                   <span>Upload a file</span>
                   <input
                     id="fileUpload"
                     name="fileUpload"
                     type="file"
+                    accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
                     className="sr-only"
                     onChange={handleFileChange}
-                    accept=".pdf,.txt,.md"
+                    disabled={isLoading}
                   />
                 </label>
                 <p className="pl-1">or drag and drop</p>
@@ -248,8 +293,8 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 PDF or text files only, max 7MB
               </p>
-              <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
-                For best results with PDFs, convert complex files to text or reduce file size.
+              <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                For best results with PDFs, convert complex files to text format or reduce file size.
               </p>
             </>
           )}

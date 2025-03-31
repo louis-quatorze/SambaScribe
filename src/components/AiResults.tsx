@@ -11,39 +11,29 @@ interface AiResultsProps {
 export function AiResults({ data }: AiResultsProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics'>('summary');
 
-  // Enhanced debug logging
+  // Add more extensive debug logging
   useEffect(() => {
-    console.log("AiResults rendered with data:", data);
+    console.log("AiResults component received data:", data);
     console.log("Data type:", typeof data);
-    if (data) {
-      console.log("Data properties:", {
-        filename: data.filename,
-        aiSummary: data.aiSummary,
-        hasMnemonics: Array.isArray(data.mnemonics),
-        mnemonicsLength: Array.isArray(data.mnemonics) ? data.mnemonics.length : 0
-      });
-    }
+    console.log("Has properties:", {
+      hasFilename: 'filename' in (data || {}),
+      hasAiSummary: 'aiSummary' in (data || {}),
+      hasMnemonics: 'mnemonics' in (data || {})
+    });
   }, [data]);
   
-  // If data is not valid, show debugging info instead of returning null
-  if (!data) {
-    console.error("AiResults received no data");
-    return (
-      <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md text-red-600 dark:text-red-400">
-        Error: No data was received to display results. Please try uploading a file again.
-      </div>
-    );
+  // More robust null/undefined/invalid data checking
+  if (!data || typeof data !== 'object') {
+    console.warn("AiResults received null/undefined data");
+    return null;
   }
 
-  // Create a safe data object with fallbacks
+  // Ensure required properties exist with fallbacks
   const safeData = {
-    filename: data.filename || 'unknown-file',
-    aiSummary: data.aiSummary || 'No summary available',
+    filename: typeof data.filename === 'string' ? data.filename : 'unknown-file',
+    aiSummary: typeof data.aiSummary === 'string' ? data.aiSummary : 'No summary available',
     mnemonics: Array.isArray(data.mnemonics) ? data.mnemonics : []
   };
-
-  // Log safe data for debugging
-  console.log("Using safe data:", safeData);
 
   return (
     <div className="w-full max-w-3xl mx-auto my-8 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 transform transition-all duration-300">
@@ -69,7 +59,7 @@ export function AiResults({ data }: AiResultsProps) {
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            Mnemonics ({safeData.mnemonics.length})
+            Mnemonics
           </button>
         </nav>
       </div>
@@ -83,10 +73,7 @@ export function AiResults({ data }: AiResultsProps) {
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
               <p className="text-sm text-blue-600 dark:text-blue-400">
-                Filename: {safeData.filename}
-              </p>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
-                Note: This is a general analysis based on the file name. 
+                Note: This is a general analysis of samba notation based on the file name. 
                 PDF parsing has been simplified to avoid technical errors.
               </p>
             </div>

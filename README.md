@@ -1,3 +1,20 @@
+# SambaScribe - PDF to Mnemonic Converter
+
+SambaScribe is an application that analyzes Samba percussion notation and generates helpful mnemonics. It uses AI to process uploaded PDF files and provide analysis results.
+
+## Current Status
+
+⚠️ **Known Issue**: When uploading PDF files, the server successfully processes them, but the AI analysis results do not display in the UI. See [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) for details and next steps for developers.
+
+## Features
+
+- Upload PDF or text files for AI analysis
+- Backend processing of notation files
+- AI-generated summaries and mnemonics
+- Specialized detection for common patterns like Butterfly and Ballerina breaks
+
+---
+
 # A Note from Kevin
 
 Hi! If you're at this repo, you've probably seen one of my AI coding videos and want to try some of those techniques yourself. If you have no clue what I'm talking about, here's a good video to show you my approach and how to best use this repo: https://youtu.be/gXmakVsIbF0
