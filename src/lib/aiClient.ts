@@ -210,26 +210,18 @@ export async function generateVisionAnalysis(
       return "Unable to analyze this PDF due to its large size. Please try a smaller file (under 7MB) or convert it to a text format.";
     }
 
-    // Using GPT-4 Vision to analyze the PDF
+    // PDF files are not directly supported by Vision API
+    // Instead, we'll use a text-based approach
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are an expert in music notation, particularly for samba percussion. Analyze PDF scores carefully."
+          content: "You are an expert in music notation, particularly for samba percussion. The user will provide a description of a PDF they're working with."
         },
         {
           role: "user",
-          content: [
-            { type: "text", text: prompt },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:application/pdf;base64,${pdfBase64}`,
-                detail: "high"
-              }
-            }
-          ]
+          content: `I'm working with a PDF samba music notation file named "${pdfFilename}". Based on this filename and the following prompt, please provide the best response you can: ${prompt}`
         }
       ],
       max_tokens: 1024

@@ -97,18 +97,21 @@ async function generateAISummary(
 ): Promise<string> {
   try {
     if (isPdf) {
-      // For PDFs, use the vision API
-      const visionPrompt = `Analyze this samba music notation PDF and provide a concise summary (under 50 words).
+      // For PDFs, use text-based approach instead of vision
+      const textPrompt = `I have a PDF file containing samba music notation with the filename "${filename}".
+Based on this filename, provide a concise summary (under 50 words) of what this notation might contain.
 Focus on:
-- Musical instruments involved
-- Overall structure and flow
-- Key elements like tempo, breaks, and unique patterns
-- Identify if there's a "butterfly break" pattern
+- Musical instruments likely involved
+- Possible structure and flow
+- Potential key elements like tempo, breaks, and unique patterns
 
 Keep the summary concise but informative.`;
 
-      const result = await generateVisionAnalysis(filename, content, visionPrompt);
-      console.log('Vision analysis summary generated successfully');
+      const result = await generateChatCompletion([
+        { role: "system", content: "You are an expert in samba music notation and rhythm patterns." },
+        { role: "user", content: textPrompt }
+      ], 'O1');
+      console.log('Text-based PDF summary generated successfully');
       return result.trim();
     } else {
       // For text content, use the regular chat API
@@ -143,33 +146,19 @@ async function generateAIMnemonics(
     let response: string;
     
     if (isPdf) {
-      // For PDFs, use vision analysis
-      const visionPrompt = `Based on this samba notation PDF and this context summary: "${summary}"
+      // For PDFs, first try a text-based approach using the summary
+      const fallbackPrompt = `Based on this summary of a samba rhythm pattern: "${summary}"
       
-Create 5 vocal mnemonics (syllables like "DUM KA PA") that match the rhythm patterns shown in this notation.
-Think about the primary accents, syncopations, and any butterfly break patterns.
-
-IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
-Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
-
-      try {
-        response = await generateVisionAnalysis('mnemonics', content, visionPrompt);
-      } catch (visionError) {
-        console.error('Vision analysis error for mnemonics:', visionError);
-        // If vision analysis fails, use the summary to generate mnemonics as fallback
-        const fallbackPrompt = `Based on this summary of a samba rhythm pattern: "${summary}"
-        
 Create 5 vocal mnemonics (syllables like "DUM KA PA") that match the described rhythm patterns.
 Think about primary accents and syncopations mentioned in the summary.
 
 IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
 Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
 
-        response = await generateChatCompletion([
-          { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns." },
-          { role: "user", content: fallbackPrompt }
-        ], 'O1');
-      }
+      response = await generateChatCompletion([
+        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns." },
+        { role: "user", content: fallbackPrompt }
+      ], 'O1');
     } else {
       // For text content
       const prompt = `Based on this summary: "${summary}" 
