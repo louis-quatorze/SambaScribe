@@ -12,7 +12,14 @@ export interface AiNotationData {
 // Special mnemonics for specific patterns
 const specialMnemonics = {
   'butterfly': 'Butterfly Break: "Out of the Chrysalis" (1-2 - 3-triplet-6)',
-  'ballerina': 'Ballerina Break: "Tchai-ko-vsky" (three even beats)'
+  'ballerina': 'Ballerina Break: "Tchai-ko-vsky" (three even beats)',
+  'entrada': 'Entrada: "LET-me-IN-to-the-PAR-ty" (entrance pattern)',
+  'paradiddle': 'Paradiddle: "pa-ra-di-dle pa-ra-di-dle" (alternating hands)',
+  'surdo1': 'Surdo 1: "BOOM --- BOOM ---" (strong beats on 1 and 3)',
+  'surdo2': 'Surdo 2: "--- BOOM --- BOOM" (strong beats on 2 and 4)',
+  'caixa': 'Caixa: "ta-ka ta-ka-ta ta-ka ta-ka-ta" (sixteenth note pattern)',
+  'repinique': 'Repinique: "din-din-din DOOM KA" (call pattern)',
+  'tamborim': 'Tamborim: "TIC-a-tic-a-TIC-a-tic-a" (teleco-teco pattern)'
 };
 
 export async function aiProcessFile(filename: string): Promise<AiNotationData> {
@@ -57,17 +64,54 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
       isPdf
     );
     
-    // For detecting butterfly patterns, check if the summary includes it
-    const hasButterfly = 
-      filename.toLowerCase().includes('butterfly') || 
-      fileContent.toLowerCase().includes('butterfly') ||
-      aiSummary.toLowerCase().includes('butterfly');
+    // Pattern detection - check for pattern names in filename, content and AI summary
+    const patternDetectors = {
+      'butterfly': [
+        'butterfly', 'chrysalis', 'flutter'
+      ],
+      'ballerina': [
+        'ballerina', 'ballet', 'tchaikovsky', 'dance', 'tchaikovsk'
+      ],
+      'entrada': [
+        'entrada', 'entrance', 'intro', 'introduction', 'let me in'
+      ],
+      'paradiddle': [
+        'paradiddle', 'alternating hands', 'rudiment', 'alternating sticking'
+      ],
+      'surdo1': [
+        'surdo 1', 'surdo one', 'first surdo', 'marcação', 'marcacao', 'marked beat'
+      ],
+      'surdo2': [
+        'surdo 2', 'surdo two', 'second surdo', 'resposta', 'response beat'
+      ],
+      'caixa': [
+        'caixa', 'snare', 'tarol', 'guerra'
+      ],
+      'repinique': [
+        'repinique', 'repique', 'repis', 'rep'
+      ],
+      'tamborim': [
+        'tamborim', 'teleco-teco', 'teleco', 'carreteiro'
+      ]
+    };
     
-    // For detecting ballerina patterns
-    const hasBallerina = 
-      filename.toLowerCase().includes('ballerina') || 
-      fileContent.toLowerCase().includes('ballerina') ||
-      aiSummary.toLowerCase().includes('ballerina');
+    // Check for each pattern
+    const detectedPatterns: Record<string, boolean> = {};
+    
+    // Function to check if content includes any of the terms
+    const contentIncludesAny = (terms: string[], content: string): boolean => {
+      const lowerContent = content.toLowerCase();
+      return terms.some(term => lowerContent.includes(term.toLowerCase()));
+    };
+    
+    // Detect patterns in filename, content and summary
+    for (const [pattern, terms] of Object.entries(patternDetectors)) {
+      detectedPatterns[pattern] = (
+        contentIncludesAny(terms, filename) || 
+        contentIncludesAny(terms, fileContent) || 
+        contentIncludesAny(terms, aiSummary)
+      );
+    }
     
     // Generate mnemonics
     let mnemonics = await generateAIMnemonics(
@@ -76,22 +120,17 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
       isPdf
     );
     
-    // Add the special butterfly mnemonic if detected
-    if (hasButterfly) {
-      console.log('Butterfly break pattern detected, adding special mnemonic');
-      mnemonics = [
-        specialMnemonics.butterfly,
-        ...mnemonics.filter(m => !m.toLowerCase().includes('butterfly'))
-      ];
-    }
-    
-    // Add the special ballerina mnemonic if detected
-    if (hasBallerina) {
-      console.log('Ballerina break pattern detected, adding special mnemonic');
-      mnemonics = [
-        specialMnemonics.ballerina,
-        ...mnemonics.filter(m => !m.toLowerCase().includes('ballerina'))
-      ];
+    // Add special mnemonics for detected patterns
+    for (const [pattern, detected] of Object.entries(detectedPatterns)) {
+      if (detected && pattern in specialMnemonics) {
+        console.log(`${pattern} pattern detected, adding special mnemonic`);
+        
+        // Add the special mnemonic at the beginning and filter out any duplicates
+        mnemonics = [
+          specialMnemonics[pattern as keyof typeof specialMnemonics],
+          ...mnemonics.filter(m => !m.toLowerCase().includes(pattern.toLowerCase()))
+        ];
+      }
     }
 
     return {
@@ -135,21 +174,31 @@ async function generateAISummary(
       
       const textPrompt = `I have a PDF file containing samba music notation with the filename "${filename}" and encoded in base64.
 This file contains actual musical notation that you should analyze.
-Based on this file, provide a concise summary (under 100 words) of what this notation contains.
+Based on this file, provide a concise summary (under 150 words) of what this notation contains.
 
 Focus on:
-- Musical instruments involved
-- Structure and flow of the music
-- Key elements like tempo, breaks, and unique patterns
+- Musical instruments involved (such as surdo, repinique, caixa, tamborim, agogô, chocalho, etc.)
+- Structure and flow of the music (intro, main pattern, breaks, variations)
+- Time signature and tempo indications
+- Key rhythm patterns and their names if identifiable
+- Dynamics and performance instructions
+- Any special breaks or patterns (like butterfly break, ballerina break, entrada, paradiddle)
 
-IMPORTANT: Include at least 2-3 specific elements or terms you found in the PDF (such as specific breaks, pattern names, or musical instructions). Put these terms in quotes to clearly identify them as direct content from the PDF.
+Include the following types of information if present:
+- Names of specific rhythm patterns or breaks
+- Tempo markings
+- Dynamic markings (forte, piano, etc.)
+- Performance instructions
+- Section labels (A, B, intro, coda, etc.)
 
-Keep the summary informative and mention ACTUAL CONTENT from the PDF.`;
+IMPORTANT: Include at least 3-4 specific elements or terms you found in the PDF (such as specific breaks, pattern names, or musical instructions). Put these terms in quotes to clearly identify them as direct content from the PDF.
+
+Keep the summary informative and highlight the most important aspects of the notation for a samba drummer.`;
 
       const result = await generateChatCompletion([
-        { role: "system", content: "You are an expert in samba music notation and rhythm patterns with the ability to analyze PDF files." },
+        { role: "system", content: "You are an expert in samba music notation and Brazilian percussion with extensive knowledge of rhythm patterns, breaks, and common samba notation conventions." },
         { role: "user", content: `${textPrompt}\n\nBase64 PDF content: ${content.substring(0, 50000)}${content.length > 50000 ? '...' : ''}` }
-      ], 'O1');
+      ], 'GPT_4O_MINI');
       console.log('PDF content-based summary generated successfully');
       return result.trim();
     } else {
@@ -158,14 +207,29 @@ Keep the summary informative and mention ACTUAL CONTENT from the PDF.`;
       
 "${content.substring(0, 1500)}${content.length > 1500 ? '...' : ''}"
 
-Please provide a concise summary (under 100 words) of this notation. Focus on the key aspects like instruments, structure, and any special patterns.
+Please provide a concise summary (under 150 words) of this notation. 
 
-IMPORTANT: Include at least 2-3 specific elements or terms you found in the text (put these in quotes).`;
+Focus on:
+- Musical instruments involved (such as surdo, repinique, caixa, tamborim, agogô, chocalho, etc.)
+- Structure and flow of the music (intro, main pattern, breaks, variations)
+- Time signature and tempo indications
+- Key rhythm patterns and their names if identifiable
+- Dynamics and performance instructions
+- Any special breaks or patterns (like butterfly break, ballerina break, entrada, paradiddle)
+
+Include the following types of information if present:
+- Names of specific rhythm patterns or breaks
+- Tempo markings
+- Dynamic markings (forte, piano, etc.)
+- Performance instructions
+- Section labels (A, B, intro, coda, etc.)
+
+IMPORTANT: Include at least 3-4 specific elements or terms you found in the text (put these in quotes) to demonstrate you're analyzing the actual content.`;
 
       const result = await generateChatCompletion([
-        { role: "system", content: "You are an expert in samba music notation and rhythm patterns." },
+        { role: "system", content: "You are an expert in samba music notation and Brazilian percussion with extensive knowledge of rhythm patterns, breaks, and common samba notation conventions." },
         { role: "user", content: prompt }
-      ], 'O1');
+      ], 'GPT_4O_MINI');
       console.log('AI summary generated successfully');
       return result.trim();
     }
@@ -191,33 +255,59 @@ async function generateAIMnemonics(
       const pdfPrompt = `Based on this summary of a samba rhythm pattern: "${summary}"
       
 And using the PDF content provided in base64 format (which contains the actual notation),
-create 5 vocal mnemonics (syllables like "DUM KA PA") that match the rhythm patterns in the PDF.
+create 5 vocal mnemonics (syllables or words) that match the rhythm patterns in the PDF.
 Look for patterns in the notation and create mnemonics that follow these rhythms.
 
-Here are examples of the types of mnemonics I am looking for:
+Here are examples of common samba rhythm patterns and effective mnemonics:
 
-Example 1:
-Ballerina Break
+Example 1: Ballerina Break (Three even beats)
 ♩ ♩ ♩
+Notation: Three evenly spaced quarter notes
+Mnemonic: "Tchai-ko-vsky" 
+The three syllables match the three evenly spaced notes. This is inspired by classical ballet music.
 
-A possible mnemonic for this rhythm, called "Ballerina Break," is "Tchai-ko-vsky." The three syllables of "Tchaikovsky" match the three evenly spaced notes.
-Inspired by classical music, this mnemonic aligns with the theme, as Tchaikovsky is famous for composing ballet masterpieces.
-
-Example 2:
-Butterfly Break
+Example 2: Butterfly Break (Seven-note pattern)
 ♩ ♩ ♩ ♪ ♪♬ ♪
+Notation: Three quarter notes followed by eighth notes and triplet
+Mnemonic: "Out of the Chry-sa-lis" 
+The phrase follows the rhythm perfectly, with each syllable aligning with a note.
 
-A possible mnemonic for this rhythm, called "Butterfly Break," is "Out of the Chrysalis." The phrase follows the rhythm, with each syllable aligning with a note.
+Example 3: Entrada (Entrance pattern)
+♩ ♪ ♪ ♩ ♪ ♪ ♩ ♩
+Notation: Quarter note, two eighth notes, repeated, then two quarter notes
+Mnemonic: "LET-me-IN-to-the-PAR-ty"
+Captures the entrance rhythm with appropriate emphasis.
 
-IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
-Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]
+Example 4: Paradiddle (Alternating hands pattern)
+♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪
+Notation: Eight even eighth notes with alternating accents
+Mnemonic: "pa-ra-di-dle pa-ra-di-dle"
+Traditional drum rudiment vocalization that matches the alternating pattern.
+
+Example 5: Samba Basic Pattern
+♩ ♪♬ ♩ ♪♬
+Notation: Quarter note followed by triplet, repeated
+Mnemonic: "BOOM da-ga BOOM da-ga"
+The heavier "BOOM" syllable represents the strong beat, while "da-ga" captures the triplet feel.
+
+IMPORTANT INSTRUCTIONS:
+1. Create mnemonics that accurately reflect the rhythm pattern in the notation
+2. Use syllables that are easy to pronounce and remember
+3. Consider the accents and dynamics of the pattern
+4. Include some contextual meaning if possible (like "Tchaikovsky" for ballet-related patterns)
+5. Make sure your mnemonics help musicians remember and internalize the rhythms
+6. You MUST return ONLY a valid JSON array of strings with your 5 best mnemonics
+7. Do not include any additional text before or after the JSON array
+
+Example response format:
+["DUM ka DUM ka", "BOOM chk BOOM chk", "TA-ki-TA-ki", "SUR-do-RE-pi-QUE", "TUM tiki TUM tiki"]
 
 PDF base64 content (first part): ${content.substring(0, 10000)}${content.length > 10000 ? '...' : ''}`;
 
       response = await generateChatCompletion([
-        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns with the ability to analyze PDF content." },
+        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns with deep knowledge of percussion notation and Brazilian rhythmic traditions." },
         { role: "user", content: pdfPrompt }
-      ], 'O1');
+      ], 'GPT_4O_MINI');
       
       console.log('Generated mnemonics using PDF content');
     } else {
@@ -227,31 +317,57 @@ PDF base64 content (first part): ${content.substring(0, 10000)}${content.length 
 And this samba notation content:
 "${content.substring(0, 1000)}${content.length > 1000 ? '...' : ''}"
 
-Create 5 vocal mnemonics (syllables that match rhythm patterns) for this notation.
-Consider the primary accents, syncopations, and any butterfly break patterns.
+Create 5 vocal mnemonics (syllables or words) that match the rhythm patterns in this notation.
+Consider the primary accents, syncopations, and any special patterns described.
 
-Here are examples of the types of mnemonics I am looking for:
+Here are examples of common samba rhythm patterns and effective mnemonics:
 
-Example 1:
-Ballerina Break
+Example 1: Ballerina Break (Three even beats)
 ♩ ♩ ♩
+Notation: Three evenly spaced quarter notes
+Mnemonic: "Tchai-ko-vsky" 
+The three syllables match the three evenly spaced notes. This is inspired by classical ballet music.
 
-A possible mnemonic for this rhythm, called "Ballerina Break," is "Tchai-ko-vsky." The three syllables of "Tchaikovsky" match the three evenly spaced notes.
-Inspired by classical music, this mnemonic aligns with the theme, as Tchaikovsky is famous for composing ballet masterpieces.
-
-Example 2:
-Butterfly Break
+Example 2: Butterfly Break (Seven-note pattern)
 ♩ ♩ ♩ ♪ ♪♬ ♪
+Notation: Three quarter notes followed by eighth notes and triplet
+Mnemonic: "Out of the Chry-sa-lis" 
+The phrase follows the rhythm perfectly, with each syllable aligning with a note.
 
-A possible mnemonic for this rhythm, called "Butterfly Break," is "Out of the Chrysalis." The phrase follows the rhythm, with each syllable aligning with a note.
+Example 3: Entrada (Entrance pattern)
+♩ ♪ ♪ ♩ ♪ ♪ ♩ ♩
+Notation: Quarter note, two eighth notes, repeated, then two quarter notes
+Mnemonic: "LET-me-IN-to-the-PAR-ty"
+Captures the entrance rhythm with appropriate emphasis.
 
-IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
-Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
+Example 4: Paradiddle (Alternating hands pattern)
+♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪
+Notation: Eight even eighth notes with alternating accents
+Mnemonic: "pa-ra-di-dle pa-ra-di-dle"
+Traditional drum rudiment vocalization that matches the alternating pattern.
+
+Example 5: Samba Basic Pattern
+♩ ♪♬ ♩ ♪♬
+Notation: Quarter note followed by triplet, repeated
+Mnemonic: "BOOM da-ga BOOM da-ga"
+The heavier "BOOM" syllable represents the strong beat, while "da-ga" captures the triplet feel.
+
+IMPORTANT INSTRUCTIONS:
+1. Create mnemonics that accurately reflect the rhythm pattern in the notation
+2. Use syllables that are easy to pronounce and remember
+3. Consider the accents and dynamics of the pattern
+4. Include some contextual meaning if possible (like "Tchaikovsky" for ballet-related patterns)
+5. Make sure your mnemonics help musicians remember and internalize the rhythms
+6. You MUST return ONLY a valid JSON array of strings with your 5 best mnemonics
+7. Do not include any additional text before or after the JSON array
+
+Example response format:
+["DUM ka DUM ka", "BOOM chk BOOM chk", "TA-ki-TA-ki", "SUR-do-RE-pi-QUE", "TUM tiki TUM tiki"]`;
 
       response = await generateChatCompletion([
-        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns." },
+        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns with deep knowledge of percussion notation and Brazilian rhythmic traditions." },
         { role: "user", content: prompt }
-      ], 'O1');
+      ], 'GPT_4O_MINI');
     }
     
     // Process the response
