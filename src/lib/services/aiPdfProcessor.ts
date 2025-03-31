@@ -11,7 +11,8 @@ export interface AiNotationData {
 
 // Special mnemonics for specific patterns
 const specialMnemonics = {
-  'butterfly': 'Butterfly Break: "Out of the Chrysalis" (1-2 - 3-triplet-6)'
+  'butterfly': 'Butterfly Break: "Out of the Chrysalis" (1-2 - 3-triplet-6)',
+  'ballerina': 'Ballerina Break: "Tchai-ko-vsky" (three even beats)'
 };
 
 export async function aiProcessFile(filename: string): Promise<AiNotationData> {
@@ -62,6 +63,12 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
       fileContent.toLowerCase().includes('butterfly') ||
       aiSummary.toLowerCase().includes('butterfly');
     
+    // For detecting ballerina patterns
+    const hasBallerina = 
+      filename.toLowerCase().includes('ballerina') || 
+      fileContent.toLowerCase().includes('ballerina') ||
+      aiSummary.toLowerCase().includes('ballerina');
+    
     // Generate mnemonics
     let mnemonics = await generateAIMnemonics(
       aiSummary, 
@@ -75,6 +82,15 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
       mnemonics = [
         specialMnemonics.butterfly,
         ...mnemonics.filter(m => !m.toLowerCase().includes('butterfly'))
+      ];
+    }
+    
+    // Add the special ballerina mnemonic if detected
+    if (hasBallerina) {
+      console.log('Ballerina break pattern detected, adding special mnemonic');
+      mnemonics = [
+        specialMnemonics.ballerina,
+        ...mnemonics.filter(m => !m.toLowerCase().includes('ballerina'))
       ];
     }
 
@@ -163,6 +179,21 @@ async function generateAIMnemonics(
 Create 5 vocal mnemonics (syllables like "DUM KA PA") that match the described rhythm patterns.
 Think about primary accents and syncopations mentioned in the summary.
 
+Here are examples of the types of mnemonics I am looking for:
+
+Example 1:
+Ballerina Break
+♩ ♩ ♩
+
+A possible mnemonic for this rhythm, called "Ballerina Break," is "Tchai-ko-vsky." The three syllables of "Tchaikovsky" match the three evenly spaced notes.
+Inspired by classical music, this mnemonic aligns with the theme, as Tchaikovsky is famous for composing ballet masterpieces.
+
+Example 2:
+Butterfly Break
+♩ ♩ ♩ ♪ ♪♬ ♪
+
+A possible mnemonic for this rhythm, called "Butterfly Break," is "Out of the Chrysalis." The phrase follows the rhythm, with each syllable aligning with a note.
+
 IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
 Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
 
@@ -179,6 +210,21 @@ And this samba notation content:
 
 Create 5 vocal mnemonics (syllables that match rhythm patterns) for this notation.
 Consider the primary accents, syncopations, and any butterfly break patterns.
+
+Here are examples of the types of mnemonics I am looking for:
+
+Example 1:
+Ballerina Break
+♩ ♩ ♩
+
+A possible mnemonic for this rhythm, called "Ballerina Break," is "Tchai-ko-vsky." The three syllables of "Tchaikovsky" match the three evenly spaced notes.
+Inspired by classical music, this mnemonic aligns with the theme, as Tchaikovsky is famous for composing ballet masterpieces.
+
+Example 2:
+Butterfly Break
+♩ ♩ ♩ ♪ ♪♬ ♪
+
+A possible mnemonic for this rhythm, called "Butterfly Break," is "Out of the Chrysalis." The phrase follows the rhythm, with each syllable aligning with a note.
 
 IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
 Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
