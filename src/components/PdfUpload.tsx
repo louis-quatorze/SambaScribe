@@ -91,87 +91,127 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       setAiProcessing(true);
       toast.info("AI is analyzing your file...");
       
-      const aiProcessResponse = await fetch("/api/ai-process", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ filename: uploadData.filename }),
-      });
+      try {
+        const aiProcessResponse = await fetch("/api/ai-process", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ filename: uploadData.filename }),
+        });
 
-      if (!aiProcessResponse.ok) {
-        const data = await aiProcessResponse.json();
-        throw new Error(data.error || "AI processing failed");
-      }
-
-      const processData = await aiProcessResponse.json();
-      console.log("AI Process Response:", processData);
-      
-      // Check if we have a valid response format first
-      if (!processData || typeof processData !== 'object') {
-        console.error("Invalid AI process response format:", processData);
-        toast.error("AI analysis completed but returned an invalid response format");
-        return;
-      }
-      
-      toast.success("File analyzed with AI successfully");
-      
-      // Ensure the response has the expected structure with more robust checking
-      if (onProcessComplete && processData.data) {
-        const aiData = processData.data;
-        
-        console.log("Processing AI data:", aiData);
-        
-        if (typeof aiData === 'object' &&
-            typeof aiData.filename === 'string' &&
-            typeof aiData.aiSummary === 'string' &&
-            Array.isArray(aiData.mnemonics)) {
-          console.log("Calling onProcessComplete with data:", aiData);
-          onProcessComplete(aiData);
-        } else {
-          console.error("Failed to process data correctly:", { 
-            processData,
-            hasData: !!processData.data,
-            dataType: processData.data ? typeof processData.data : 'undefined',
-            responseStructure: aiData ? 
-              { 
-                hasFilename: typeof aiData?.filename === 'string',
-                hasAiSummary: typeof aiData?.aiSummary === 'string',
-                hasMnemonics: Array.isArray(aiData?.mnemonics)
-              } : 'No data'
-          });
-          
-          // Create a fallback data structure to avoid UI errors
-          const fallbackData = {
-            filename: processData.data?.filename || "unknown-file",
-            aiSummary: processData.data?.aiSummary || "The file was analyzed but returned unexpected data. Please try another file.",
-            mnemonics: Array.isArray(processData.data?.mnemonics) ? 
-              processData.data.mnemonics : 
-              ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
-          };
-          
-          toast.warning("AI analysis completed with unexpected results");
-          onProcessComplete(fallbackData);
+        if (!aiProcessResponse.ok) {
+          const data = await aiProcessResponse.json();
+          throw new Error(data.error || "AI processing failed");
         }
-      } else if (onProcessComplete) {
-        // If processData.data is missing but we need to call onProcessComplete
-        console.error("Missing data property in AI process response:", processData);
+
+        const processData = await aiProcessResponse.json();
+        console.log("AI Process Response:", processData);
         
-        // Try to use the processData directly if it has the right structure
-        if (typeof processData === 'object' && 
-            typeof processData.filename === 'string' && 
-            typeof processData.aiSummary === 'string' && 
-            Array.isArray(processData.mnemonics)) {
-          console.log("Using processData directly:", processData);
-          onProcessComplete(processData);
-        } else {
+        // Check if we have a valid response format first
+        if (!processData || typeof processData !== 'object') {
+          console.error("Invalid AI process response format:", processData);
+          toast.error("AI analysis completed but returned an invalid response format");
+          
+          // Use fallback data to avoid UI not showing any results
+          if (onProcessComplete) {
+            const fallbackData = {
+              filename: file.name,
+              aiSummary: "Analysis could not be completed due to a server error. Please try again later.",
+              mnemonics: [
+                "Error connecting to AI service",
+                "WebSocket connection failed",
+                "Try again in a few minutes",
+                "Server might be restarting",
+                "Contact support if the issue persists"
+              ]
+            };
+            onProcessComplete(fallbackData);
+          }
+          return;
+        }
+        
+        toast.success("File analyzed with AI successfully");
+        
+        // Ensure the response has the expected structure with more robust checking
+        if (onProcessComplete && processData.data) {
+          const aiData = processData.data;
+          
+          console.log("Processing AI data:", aiData);
+          
+          if (typeof aiData === 'object' &&
+              typeof aiData.filename === 'string' &&
+              typeof aiData.aiSummary === 'string' &&
+              Array.isArray(aiData.mnemonics)) {
+            console.log("Calling onProcessComplete with data:", aiData);
+            onProcessComplete(aiData);
+          } else {
+            console.error("Failed to process data correctly:", { 
+              processData,
+              hasData: !!processData.data,
+              dataType: processData.data ? typeof processData.data : 'undefined',
+              responseStructure: aiData ? 
+                { 
+                  hasFilename: typeof aiData?.filename === 'string',
+                  hasAiSummary: typeof aiData?.aiSummary === 'string',
+                  hasMnemonics: Array.isArray(aiData?.mnemonics)
+                } : 'No data'
+            });
+            
+            // Create a fallback data structure to avoid UI errors
+            const fallbackData = {
+              filename: processData.data?.filename || "unknown-file",
+              aiSummary: processData.data?.aiSummary || "The file was analyzed but returned unexpected data. Please try another file.",
+              mnemonics: Array.isArray(processData.data?.mnemonics) ? 
+                processData.data.mnemonics : 
+                ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+            };
+            
+            toast.warning("AI analysis completed with unexpected results");
+            onProcessComplete(fallbackData);
+          }
+        } else if (onProcessComplete) {
+          // If processData.data is missing but we need to call onProcessComplete
+          console.error("Missing data property in AI process response:", processData);
+          
+          // Try to use the processData directly if it has the right structure
+          if (typeof processData === 'object' && 
+              typeof processData.filename === 'string' && 
+              typeof processData.aiSummary === 'string' && 
+              Array.isArray(processData.mnemonics)) {
+            console.log("Using processData directly:", processData);
+            onProcessComplete(processData);
+          } else {
+            const fallbackData = {
+              filename: "error-processing",
+              aiSummary: "The file could not be analyzed correctly. Please try a different file or format.",
+              mnemonics: ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+            };
+            console.error("Using fallback data due to missing or invalid data property");
+            toast.warning("AI analysis completed but data was in an unexpected format");
+            onProcessComplete(fallbackData);
+          }
+        }
+      } catch (aiError) {
+        console.error("AI processing error:", aiError);
+        toast.error(aiError instanceof Error ? 
+          `AI processing error: ${aiError.message}` : 
+          "Connection to AI service failed. Please try again later."
+        );
+        
+        // Provide fallback data even when AI processing fails
+        if (onProcessComplete) {
           const fallbackData = {
-            filename: "error-processing",
-            aiSummary: "The file could not be analyzed correctly. Please try a different file or format.",
-            mnemonics: ["Error in processing", "Please try again", "Text files work best", "Smaller files recommended", "Contact support if needed"]
+            filename: file.name,
+            aiSummary: "The AI service could not process your file due to a connection error. This might be caused by a WebSocket connection failure or server unavailability.",
+            mnemonics: [
+              "Error connecting to AI service",
+              "WebSocket connection failed",
+              "Try again in a few minutes",
+              "Server might be restarting",
+              "Contact support if the issue persists"
+            ]
           };
-          console.error("Using fallback data due to missing or invalid data property");
-          toast.warning("AI analysis completed but data was in an unexpected format");
           onProcessComplete(fallbackData);
         }
       }
