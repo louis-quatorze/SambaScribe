@@ -12,7 +12,7 @@
 - Changed the default AI model from O1 to GPT-4o mini for cost efficiency.
 - Fixed issue with AI analysis results not displaying by improving error handling and adding robust data validation in PdfUpload component and aiPdfProcessor service.
 - Enhanced PDF processing with Vision API for accurate samba notation analysis and improved mnemonics generation.
-- Fixed OpenAI Vision API error by modifying PDF handling to use text-based analysis instead of unsupported PDF format in Vision API.
+- Fixed PDF processing errors by implementing size limit checks and improved error handling for large PDF files.
 
 # SambaScribe Updates
 

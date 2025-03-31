@@ -10,7 +10,7 @@ interface PdfUploadProps {
   onProcessComplete?: (data: AiNotationData) => void;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+const MAX_FILE_SIZE = 7 * 1024 * 1024; // Reducing to 7MB to account for base64 overhead
 
 export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
@@ -34,9 +34,15 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       return;
     }
 
-    // Validate file size
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    
+    // Validate file size with more detailed message for PDFs
     if (file.size > MAX_FILE_SIZE) {
-      toast.error("File size exceeds 10MB limit");
+      if (isPdf) {
+        toast.error("PDF size exceeds 7MB limit. For better results, try converting to text or reducing the PDF size.");
+      } else {
+        toast.error("File size exceeds 7MB limit");
+      }
       event.target.value = ""; // Clear the input
       return;
     }
@@ -200,10 +206,10 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
                 <p className="pl-1">or drag and drop</p>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                PDF or text files only, max 10MB
+                PDF or text files only, max 7MB
               </p>
               <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
-                PDF parsing has been simplified to avoid technical errors.
+                For best results with PDFs, convert complex files to text format or reduce file size.
               </p>
             </>
           )}

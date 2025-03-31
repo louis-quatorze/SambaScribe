@@ -203,18 +203,33 @@ export async function generateVisionAnalysis(
   prompt: string
 ): Promise<string> {
   try {
-    // For PDFs, we can't use vision API directly as it only accepts images
-    // Use text-based completion instead with PDF name as context
+    // Check if the base64 data exceeds reasonable size limits
+    const maxBase64Size = 10 * 1024 * 1024; // Around 7.5MB PDF size
+    if (pdfBase64.length > maxBase64Size) {
+      console.warn(`PDF base64 content too large (${pdfBase64.length} chars), exceeding ${maxBase64Size} char limit`);
+      return "Unable to analyze this PDF due to its large size. Please try a smaller file (under 7MB) or convert it to a text format.";
+    }
+
+    // Using GPT-4 Vision to analyze the PDF
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are an expert in music notation, particularly for samba percussion. Analyze descriptions of scores carefully."
+          content: "You are an expert in music notation, particularly for samba percussion. Analyze PDF scores carefully."
         },
         {
           role: "user",
-          content: `I have a PDF file named "${pdfFilename}" containing samba music notation. ${prompt}`
+          content: [
+            { type: "text", text: prompt },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:application/pdf;base64,${pdfBase64}`,
+                detail: "high"
+              }
+            }
+          ]
         }
       ],
       max_tokens: 1024

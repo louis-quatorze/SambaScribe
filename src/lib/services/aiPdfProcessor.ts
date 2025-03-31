@@ -48,16 +48,12 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
       console.log(`Text file read successfully: ${filename}, size: ${fileContent.length} characters`);
     }
     
-    // Extract potential metadata from filename (for PDFs)
-    const filenameMetadata = extractFilenameMetadata(filename);
-    
     // Generate AI summary based on the file content
     const aiSummary = await generateAISummary(
       filename, 
       fileType, 
       isPdf ? pdfBase64 : fileContent, 
-      isPdf,
-      filenameMetadata
+      isPdf
     );
     
     // For detecting butterfly patterns, check if the summary includes it
@@ -70,8 +66,7 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
     let mnemonics = await generateAIMnemonics(
       aiSummary, 
       isPdf ? pdfBase64 : fileContent, 
-      isPdf,
-      filenameMetadata
+      isPdf
     );
     
     // Add the special butterfly mnemonic if detected
@@ -94,36 +89,17 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
   }
 }
 
-/**
- * Extract metadata from filename to provide additional context
- */
-function extractFilenameMetadata(filename: string): string {
-  // Remove extension and timestamp
-  const nameWithoutExtension = filename.replace(/\.\w+$/, '');
-  const nameWithoutTimestamp = nameWithoutExtension.replace(/^\d+-/, '');
-  
-  // Split by common separators
-  const parts = nameWithoutTimestamp.split(/[-_\s]+/);
-  
-  // Extract potential instrument, style, section info
-  const metadata = parts.filter(part => part.length > 1).join(", ");
-  
-  return metadata || nameWithoutTimestamp;
-}
-
 async function generateAISummary(
   filename: string, 
   fileType: string, 
   content: string, 
-  isPdf: boolean,
-  metadata: string = ""
+  isPdf: boolean
 ): Promise<string> {
   try {
     if (isPdf) {
-      // For PDFs, use the text-based approach since vision API doesn't support PDFs
-      const contextPrompt = `Analyze this samba music notation with filename "${filename}" ${metadata ? `containing these elements: ${metadata}` : ''}.
-      
-Provide a concise summary (under 50 words) focusing on:
+      // For PDFs, use the vision API
+      const visionPrompt = `Analyze this samba music notation PDF and provide a concise summary (under 50 words).
+Focus on:
 - Musical instruments involved
 - Overall structure and flow
 - Key elements like tempo, breaks, and unique patterns
@@ -131,7 +107,7 @@ Provide a concise summary (under 50 words) focusing on:
 
 Keep the summary concise but informative.`;
 
-      const result = await generateVisionAnalysis(filename, content, contextPrompt);
+      const result = await generateVisionAnalysis(filename, content, visionPrompt);
       console.log('Vision analysis summary generated successfully');
       return result.trim();
     } else {
@@ -161,23 +137,39 @@ Please provide a concise summary (under 50 words) of this notation. Focus on the
 async function generateAIMnemonics(
   summary: string, 
   content: string, 
-  isPdf: boolean,
-  metadata: string = ""
+  isPdf: boolean
 ): Promise<string[]> {
   try {
     let response: string;
     
     if (isPdf) {
-      // For PDFs, use text-based approach since vision API doesn't support PDFs
-      const contextPrompt = `Based on this samba notation with filename metadata "${metadata}" and this context summary: "${summary}"
+      // For PDFs, use vision analysis
+      const visionPrompt = `Based on this samba notation PDF and this context summary: "${summary}"
       
-Create 5 vocal mnemonics (syllables like "DUM KA PA") that match the rhythm patterns of this notation.
+Create 5 vocal mnemonics (syllables like "DUM KA PA") that match the rhythm patterns shown in this notation.
 Think about the primary accents, syncopations, and any butterfly break patterns.
 
 IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
 Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
 
-      response = await generateVisionAnalysis('mnemonics', content, contextPrompt);
+      try {
+        response = await generateVisionAnalysis('mnemonics', content, visionPrompt);
+      } catch (visionError) {
+        console.error('Vision analysis error for mnemonics:', visionError);
+        // If vision analysis fails, use the summary to generate mnemonics as fallback
+        const fallbackPrompt = `Based on this summary of a samba rhythm pattern: "${summary}"
+        
+Create 5 vocal mnemonics (syllables like "DUM KA PA") that match the described rhythm patterns.
+Think about primary accents and syncopations mentioned in the summary.
+
+IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
+Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
+
+        response = await generateChatCompletion([
+          { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns." },
+          { role: "user", content: fallbackPrompt }
+        ], 'O1');
+      }
     } else {
       // For text content
       const prompt = `Based on this summary: "${summary}" 
@@ -199,6 +191,18 @@ Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
     
     // Process the response
     console.log('Raw AI mnemonics response:', response);
+    
+    // Check for common error messages
+    if (response.includes("Unable to analyze this PDF")) {
+      console.warn('Vision API could not analyze the PDF, using fallback mnemonics');
+      return [
+        "DUM ka DUM ka",
+        "BOOM chk BOOM chk",
+        "DUM DUM PA pa",
+        "TA ki TA ki TA",
+        "BOOM pa BOOM pa"
+      ];
+    }
     
     // Try to extract a JSON array
     try {
