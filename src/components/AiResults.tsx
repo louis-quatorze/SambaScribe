@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
 import { FileText, BookOpen } from "lucide-react";
-import { Loader2 } from "lucide-react";
 
 interface AiResultsProps {
   data: AiNotationData;
-  isLoadingMnemonics?: boolean;
 }
 
-export function AiResults({ data, isLoadingMnemonics = false }: AiResultsProps) {
-  const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics'>('mnemonics');
+export function AiResults({ data }: AiResultsProps) {
+  const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics'>('summary');
 
   console.log("AiResults component received data:", data);
   
@@ -58,7 +56,8 @@ export function AiResults({ data, isLoadingMnemonics = false }: AiResultsProps) 
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
               <p className="text-sm text-blue-600 dark:text-blue-400">
-                Note: This analysis is based on the actual content of your uploaded file.
+                Note: This is a general analysis of samba notation based on the file name. 
+                PDF parsing has been simplified to avoid technical errors.
               </p>
             </div>
           </div>
@@ -67,13 +66,7 @@ export function AiResults({ data, isLoadingMnemonics = false }: AiResultsProps) 
         {activeTab === 'mnemonics' && (
           <div className="space-y-4 animate-fade-in">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">AI-Generated Mnemonics</h2>
-            
-            {isLoadingMnemonics ? (
-              <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-                <p className="text-gray-600 dark:text-gray-400">Generating mnemonics...</p>
-              </div>
-            ) : data.mnemonics && data.mnemonics.length > 0 ? (
+            {data.mnemonics.length > 0 ? (
               <ul className="space-y-3 text-gray-700 dark:text-gray-300">
                 {data.mnemonics.map((mnemonic, i) => (
                   <li key={i} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-md shadow-sm border border-gray-100 dark:border-gray-600 hover:shadow-md transition-shadow">
@@ -84,10 +77,9 @@ export function AiResults({ data, isLoadingMnemonics = false }: AiResultsProps) 
             ) : (
               <p className="text-gray-500 dark:text-gray-400">No mnemonics were generated.</p>
             )}
-            
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
               <p className="text-sm text-blue-600 dark:text-blue-400">
-                These mnemonics are specific to the rhythm patterns found in your uploaded file.
+                These mnemonics are general examples for common samba patterns rather than specific to your file's content.
               </p>
             </div>
           </div>

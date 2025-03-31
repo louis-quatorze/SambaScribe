@@ -196,3 +196,33 @@ export async function generateChatCompletion(
     throw error;
   }
 }
+
+export async function generateVisionAnalysis(
+  pdfFilename: string, 
+  pdfBase64: string, 
+  prompt: string
+): Promise<string> {
+  try {
+    // For PDFs, we can't use vision API directly as it only accepts images
+    // Use text-based completion instead with PDF name as context
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert in music notation, particularly for samba percussion. Analyze descriptions of scores carefully."
+        },
+        {
+          role: "user",
+          content: `I have a PDF file named "${pdfFilename}" containing samba music notation. ${prompt}`
+        }
+      ],
+      max_tokens: 1024
+    });
+
+    return completion.choices[0]?.message?.content ?? "";
+  } catch (error) {
+    console.error(`Error generating vision analysis:`, error);
+    return "Unable to analyze this PDF due to an error. The file may be too large or in an unsupported format.";
+  }
+}

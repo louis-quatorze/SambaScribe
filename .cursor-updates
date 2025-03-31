@@ -11,14 +11,8 @@
 - Removed all PDF parsing libraries and simplified to basic AI prompts to resolve persistent PDF.js worker errors
 - Changed the default AI model from O1 to GPT-4o mini for cost efficiency.
 - Fixed issue with AI analysis results not displaying by improving error handling and adding robust data validation in PdfUpload component and aiPdfProcessor service.
-- Modified page.tsx to use HomePage component for displaying AI analysis from uploaded files.
-- Created a sample samba notation file for testing the AI analysis functionality.
-- Enhanced AI analysis to read and analyze the actual content of uploaded files instead of just using the filename.
-- Added PDF parsing support using pdf-parse library for proper PDF document analysis.
-- Updated UI text to reflect that analysis is now based on actual file content.
-- Implemented progressive loading of AI analysis results with mnemonics displayed in a separate phase.
-- Created a new API endpoint for generating mnemonics independently from the initial analysis.
-- Changed the default tab to show mnemonics first with a loading state.
+- Enhanced PDF processing with Vision API for accurate samba notation analysis and improved mnemonics generation.
+- Fixed OpenAI Vision API error by modifying PDF handling to use text-based analysis instead of unsupported PDF format in Vision API.
 
 # SambaScribe Updates
 
