@@ -1,6 +1,6 @@
 import React from "react";
 import ClientProvider from "@/components/ClientProvider";
-import { PdfUpload } from "@/components/PdfUpload";
+import { HomePage } from "@/components/HomePage";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export default async function Page() {
               <p className="text-center text-gray-600 dark:text-gray-400">
                 Upload your Samba notation PDF to generate helpful mnemonics
               </p>
-              <PdfUpload />
+              <HomePage />
             </section>
           </div>
         </ClientProvider>

@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    console.log("Processing file:", filename);
     const notationData = await aiProcessFile(filename);
     
     // Validate the response data before returning
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       }
     };
     
-    console.log("API: Returning response:", response);
+    console.log("API: Returning response:", JSON.stringify(response, null, 2));
     return NextResponse.json(response);
   } catch (error) {
     console.error("AI Processing error:", error);

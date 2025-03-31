@@ -61,17 +61,14 @@ export function HomePage() {
             </div>
             <PdfUpload onProcessComplete={handleProcessComplete} />
             
-            {aiResults ? (
-              <div 
-                ref={resultsRef}
-                className="w-full transition-all duration-300 animate-fade-in"
-              >
+            {aiResults && (
+              <div ref={resultsRef} className="w-full transition-all duration-300 animate-fade-in">
                 <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-4">
                   AI Analysis Results
                 </h2>
                 <AiResults data={aiResults} />
               </div>
-            ) : null}
+            )}
           </section>
         </div>
       </main>
