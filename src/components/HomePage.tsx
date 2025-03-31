@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { PdfUpload } from "@/components/PdfUpload";
 import { AiResults } from "@/components/AiResults";
+import { SampleFiles } from "@/components/SampleFiles";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
 
 export function HomePage() {
@@ -53,7 +54,15 @@ export function HomePage() {
             <p className="text-center text-gray-600 dark:text-gray-400">
               Upload a samba notation file for AI-powered analysis and mnemonic generation
             </p>
-            <PdfUpload onProcessComplete={handleProcessComplete} />
+            
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <PdfUpload onProcessComplete={handleProcessComplete} />
+              </div>
+              <div>
+                <SampleFiles onProcessComplete={handleProcessComplete} />
+              </div>
+            </div>
             
             {aiResults && (
               <div ref={resultsRef} className="w-full transition-all duration-300 animate-fade-in">
