@@ -8,6 +8,8 @@ export async function POST(request: NextRequest) {
     requestData = await request.json();
     const filename = requestData?.filename;
 
+    console.log("AI Process API received request for filename:", filename);
+
     if (!filename || typeof filename !== 'string') {
       console.error("Invalid or missing filename in request:", requestData);
       return NextResponse.json({ 
@@ -22,6 +24,8 @@ export async function POST(request: NextRequest) {
     }
 
     const notationData = await aiProcessFile(filename);
+    
+    console.log("AI Process API generated notation data:", JSON.stringify(notationData, null, 2));
     
     // Validate the response data before returning
     if (!notationData || 
@@ -59,7 +63,7 @@ export async function POST(request: NextRequest) {
       }
     };
     
-    console.log("API: Returning response:", response);
+    console.log("AI Process API returning response:", JSON.stringify(response, null, 2));
     return NextResponse.json(response);
   } catch (error) {
     console.error("AI Processing error:", error);

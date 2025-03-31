@@ -11,23 +11,39 @@ interface AiResultsProps {
 export function AiResults({ data }: AiResultsProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics'>('summary');
 
-  // Add debug logging
+  // Enhanced debug logging
   useEffect(() => {
-    console.log("AiResults component rendered with data:", data);
+    console.log("AiResults rendered with data:", data);
+    console.log("Data type:", typeof data);
+    if (data) {
+      console.log("Data properties:", {
+        filename: data.filename,
+        aiSummary: data.aiSummary,
+        hasMnemonics: Array.isArray(data.mnemonics),
+        mnemonicsLength: Array.isArray(data.mnemonics) ? data.mnemonics.length : 0
+      });
+    }
   }, [data]);
   
-  // If data is not valid, render nothing
+  // If data is not valid, show debugging info instead of returning null
   if (!data) {
-    console.warn("AiResults received no data");
-    return null;
+    console.error("AiResults received no data");
+    return (
+      <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md text-red-600 dark:text-red-400">
+        Error: No data was received to display results. Please try uploading a file again.
+      </div>
+    );
   }
 
-  // Ensure required properties exist with fallbacks
+  // Create a safe data object with fallbacks
   const safeData = {
     filename: data.filename || 'unknown-file',
     aiSummary: data.aiSummary || 'No summary available',
     mnemonics: Array.isArray(data.mnemonics) ? data.mnemonics : []
   };
+
+  // Log safe data for debugging
+  console.log("Using safe data:", safeData);
 
   return (
     <div className="w-full max-w-3xl mx-auto my-8 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 transform transition-all duration-300">
@@ -53,7 +69,7 @@ export function AiResults({ data }: AiResultsProps) {
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            Mnemonics
+            Mnemonics ({safeData.mnemonics.length})
           </button>
         </nav>
       </div>
@@ -67,7 +83,10 @@ export function AiResults({ data }: AiResultsProps) {
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
               <p className="text-sm text-blue-600 dark:text-blue-400">
-                Note: This is a general analysis of samba notation based on the file name. 
+                Filename: {safeData.filename}
+              </p>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+                Note: This is a general analysis based on the file name. 
                 PDF parsing has been simplified to avoid technical errors.
               </p>
             </div>

@@ -78,6 +78,7 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       }
 
       const uploadData = await uploadResponse.json();
+      console.log("Upload Response:", uploadData);
       
       if (onFileSelect) {
         onFileSelect(file);
@@ -92,6 +93,7 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       toast.info("AI is analyzing your file...");
       
       try {
+        console.log("Sending AI process request for file:", uploadData.filename);
         const aiProcessResponse = await fetch("/api/ai-process", {
           method: "POST",
           headers: {
@@ -110,30 +112,40 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
         
         toast.success("File analyzed with AI successfully");
         
-        // Simplified the response handling to directly utilize the data structure from the API response
-        if (onProcessComplete && processData.data) {
-          console.log("Calling onProcessComplete with data:", processData.data);
-          onProcessComplete(processData.data);
-        } else if (onProcessComplete && processData.success === false && processData.data) {
-          // Handle error case with error data
-          console.log("Using error fallback data:", processData.data);
-          onProcessComplete(processData.data);
-        } else if (onProcessComplete) {
-          // Fallback for unexpected response format
-          console.error("Unexpected API response format:", processData);
-          const fallbackData = {
-            filename: file.name,
-            aiSummary: "Analysis could not be completed in the expected format. Please try a different file.",
-            mnemonics: [
-              "Error processing the file",
-              "Please try again with a different file",
-              "Text files work best",
-              "Smaller files recommended",
-              "Contact support if needed"
-            ]
-          };
-          toast.warning("AI analysis completed but returned unexpected data format");
-          onProcessComplete(fallbackData);
+        if (onProcessComplete) {
+          // Check if the data is directly in processData or in processData.data
+          if (processData.data && 
+              typeof processData.data.filename === 'string' && 
+              typeof processData.data.aiSummary === 'string' && 
+              Array.isArray(processData.data.mnemonics)) {
+            console.log("Using data from processData.data:", processData.data);
+            onProcessComplete(processData.data);
+          } 
+          // If data is directly in the root of processData
+          else if (typeof processData.filename === 'string' && 
+                   typeof processData.aiSummary === 'string' && 
+                   Array.isArray(processData.mnemonics)) {
+            console.log("Using data directly from processData:", processData);
+            onProcessComplete(processData);
+          }
+          // Otherwise use fallback
+          else {
+            console.error("Invalid response format:", processData);
+            const fallbackData = {
+              filename: file.name,
+              aiSummary: "The file was analyzed but returned in an unexpected format. Please try again.",
+              mnemonics: [
+                "Error in data format",
+                "Try different file type",
+                "Text files work best",
+                "Ensure file isn't corrupted",
+                "Contact support if needed"
+              ]
+            };
+            console.log("Using fallback data:", fallbackData);
+            toast.warning("AI analysis completed with unexpected data format");
+            onProcessComplete(fallbackData);
+          }
         }
       } catch (aiError) {
         console.error("AI processing error:", aiError);
@@ -155,6 +167,7 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
               "Contact support if the issue persists"
             ]
           };
+          console.log("Using error fallback data:", fallbackData);
           onProcessComplete(fallbackData);
         }
       }

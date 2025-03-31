@@ -7,18 +7,33 @@ import { AiNotationData } from "@/lib/services/aiPdfProcessor";
 
 export function HomePage() {
   const [aiResults, setAiResults] = useState<AiNotationData | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleProcessComplete = (data: AiNotationData) => {
     console.log("HomePage received AI data:", data);
     
-    // Ensure we have valid data in the expected format
     if (!data) {
       console.error("No data received in handleProcessComplete");
+      setDebugInfo("Error: No data received from AI processing");
       return;
     }
 
-    setAiResults(data);
+    try {
+      // Validate data structure
+      const validData: AiNotationData = {
+        filename: data.filename || "unknown-file",
+        aiSummary: data.aiSummary || "No summary available",
+        mnemonics: Array.isArray(data.mnemonics) ? data.mnemonics : []
+      };
+      
+      console.log("Setting aiResults state with:", validData);
+      setAiResults(validData);
+      setDebugInfo(null); // Clear any previous debug info
+    } catch (error) {
+      console.error("Error handling AI data:", error);
+      setDebugInfo(`Error handling AI data: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
   };
 
   // Scroll to results when they become available
@@ -34,6 +49,15 @@ export function HomePage() {
   // Debug log when component mounts or aiResults changes
   useEffect(() => {
     console.log("HomePage aiResults state:", aiResults);
+    
+    // Log the structure of aiResults
+    if (aiResults) {
+      console.log("aiResults properties:", {
+        filename: aiResults.filename,
+        aiSummaryLength: aiResults.aiSummary?.length,
+        mnemonicsCount: aiResults.mnemonics?.length
+      });
+    }
   }, [aiResults]);
 
   return (
@@ -55,6 +79,13 @@ export function HomePage() {
             </div>
             <PdfUpload onProcessComplete={handleProcessComplete} />
             
+            {debugInfo && (
+              <div className="w-full max-w-xl mx-auto p-4 bg-red-50 dark:bg-red-900/20 rounded-md text-red-600 dark:text-red-400">
+                <p className="font-medium">Debug Information:</p>
+                <p className="text-sm">{debugInfo}</p>
+              </div>
+            )}
+            
             {aiResults ? (
               <div 
                 ref={resultsRef}
@@ -66,7 +97,11 @@ export function HomePage() {
                 </h2>
                 <AiResults data={aiResults} />
               </div>
-            ) : null}
+            ) : (
+              <div className="w-full max-w-xl mx-auto p-4 rounded-md text-gray-500 dark:text-gray-400 text-center">
+                {!debugInfo && "Upload a file to see AI analysis results here"}
+              </div>
+            )}
           </section>
         </div>
       </main>
