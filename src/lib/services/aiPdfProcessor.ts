@@ -207,7 +207,7 @@ Keep the summary informative and highlight the most important aspects of the not
       
 "${content.substring(0, 1500)}${content.length > 1500 ? '...' : ''}"
 
-Please provide a concise summary (under 150 words) of this notation. 
+Please provide a concise summary (under 100 words) of this notation. 
 
 Focus on:
 - Musical instruments involved (such as surdo, repinique, caixa, tamborim, agogô, chocalho, etc.)
@@ -258,19 +258,28 @@ And using the PDF content provided in base64 format (which contains the actual n
 create 5 vocal mnemonics (syllables or words) that match the rhythm patterns in the PDF.
 Look for patterns in the notation and create mnemonics that follow these rhythms.
 
+You are to act as a music educator, helping to create rhythmic mnemonics for specific musical patterns. I will provide you with a PDF file containing standard musical notation. This includes time signatures, rhythmic figures, and performance directions. The mnemonic should have a one-to-one mapping between the notes and the syllables of the mnemonic, using the same theme as the break name.
+
 Here are examples of common samba rhythm patterns and effective mnemonics:
 
-Example 1: Ballerina Break (Three even beats)
-♩ ♩ ♩
-Notation: Three evenly spaced quarter notes
-Mnemonic: "Tchai-ko-vsky" 
-The three syllables match the three evenly spaced notes. This is inspired by classical ballet music.
-
-Example 2: Butterfly Break (Seven-note pattern)
-♩ ♩ ♩ ♪ ♪♬ ♪
-Notation: Three quarter notes followed by eighth notes and triplet
-Mnemonic: "Out of the Chry-sa-lis" 
-The phrase follows the rhythm perfectly, with each syllable aligning with a note.
+"examples": [
+  {
+    "break_name": "Butterfly Break",
+    "rhythmic_pattern": "Quarter note, [Space], Quarter note, [Space], Quarter note, [Space], Eighth note, Eighth note, [Space], Eighth note",
+    "expected_result": {
+      "mnemonic": "Out of the Chry-sa-lis",
+      "explanation": "A mnemonic with syllables that directly correspond to the rhythm, using the theme of 'butterfly'."
+    }
+  },
+  {
+    "break_name": "Ballerina Break",
+    "rhythmic_pattern": "Eighth note, Eighth note, Eighth note",
+    "expected_result": {
+      "mnemonic": "Tchai-ko-vsky",
+      "explanation": "The three syllables of 'Tchaikovsky' match the three evenly spaced notes. Inspired by classical music, this mnemonic aligns with the theme, as Tchaikovsky is famous for composing ballet masterpieces like Swan Lake and The Nutcracker."
+    }
+  }
+]
 
 Example 3: Entrada (Entrance pattern)
 ♩ ♪ ♪ ♩ ♪ ♪ ♩ ♩
@@ -305,7 +314,7 @@ Example response format:
 PDF base64 content (first part): ${content.substring(0, 10000)}${content.length > 10000 ? '...' : ''}`;
 
       response = await generateChatCompletion([
-        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns with deep knowledge of percussion notation and Brazilian rhythmic traditions." },
+        { role: "system", content: "You are a music educator, helping to create rhythmic mnemonics for specific musical patterns. You have deep knowledge of percussion notation and Brazilian rhythmic traditions, and excel at creating mnemonics with a one-to-one mapping between notes and syllables." },
         { role: "user", content: pdfPrompt }
       ], 'GPT_4O_MINI');
       
@@ -320,19 +329,28 @@ And this samba notation content:
 Create 5 vocal mnemonics (syllables or words) that match the rhythm patterns in this notation.
 Consider the primary accents, syncopations, and any special patterns described.
 
+You are to act as a music educator, helping to create rhythmic mnemonics for specific musical patterns. I will provide you with a PDF file containing standard musical notation. This includes time signatures, rhythmic figures, and performance directions. The mnemonic should have a one-to-one mapping between the notes and the syllables of the mnemonic, using the same theme as the break name.
+
 Here are examples of common samba rhythm patterns and effective mnemonics:
 
-Example 1: Ballerina Break (Three even beats)
-♩ ♩ ♩
-Notation: Three evenly spaced quarter notes
-Mnemonic: "Tchai-ko-vsky" 
-The three syllables match the three evenly spaced notes. This is inspired by classical ballet music.
-
-Example 2: Butterfly Break (Seven-note pattern)
-♩ ♩ ♩ ♪ ♪♬ ♪
-Notation: Three quarter notes followed by eighth notes and triplet
-Mnemonic: "Out of the Chry-sa-lis" 
-The phrase follows the rhythm perfectly, with each syllable aligning with a note.
+"examples": [
+  {
+    "break_name": "Butterfly Break",
+    "rhythmic_pattern": "Quarter note, [Space], Quarter note, [Space], Quarter note, [Space], Eighth note, Eighth note, [Space], Eighth note",
+    "expected_result": {
+      "mnemonic": "Out of the Chry-sa-lis",
+      "explanation": "A mnemonic with syllables that directly correspond to the rhythm, using the theme of 'butterfly'."
+    }
+  },
+  {
+    "break_name": "Ballerina Break",
+    "rhythmic_pattern": "Eighth note, Eighth note, Eighth note",
+    "expected_result": {
+      "mnemonic": "Tchai-ko-vsky",
+      "explanation": "The three syllables of 'Tchaikovsky' match the three evenly spaced notes. Inspired by classical music, this mnemonic aligns with the theme, as Tchaikovsky is famous for composing ballet masterpieces like Swan Lake and The Nutcracker."
+    }
+  }
+]
 
 Example 3: Entrada (Entrance pattern)
 ♩ ♪ ♪ ♩ ♪ ♪ ♩ ♩
@@ -365,7 +383,7 @@ Example response format:
 ["DUM ka DUM ka", "BOOM chk BOOM chk", "TA-ki-TA-ki", "SUR-do-RE-pi-QUE", "TUM tiki TUM tiki"]`;
 
       response = await generateChatCompletion([
-        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns with deep knowledge of percussion notation and Brazilian rhythmic traditions." },
+        { role: "system", content: "You are a music educator, helping to create rhythmic mnemonics for specific musical patterns. You have deep knowledge of percussion notation and Brazilian rhythmic traditions, and excel at creating mnemonics with a one-to-one mapping between notes and syllables." },
         { role: "user", content: prompt }
       ], 'GPT_4O_MINI');
     }
