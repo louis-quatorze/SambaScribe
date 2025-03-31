@@ -203,12 +203,12 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
         if (onProcessComplete) {
           const fallbackData = {
             filename: file.name,
-            aiSummary: "The AI service could not process your file due to a connection error. This might be caused by a WebSocket connection failure or server unavailability.",
+            aiSummary: "The AI service could not process your file due to a WebSocket connection failure. The app is looking for a tRPC WebSocket server at ws://localhost:3001 which is not running. This is needed for real-time updates and subscriptions.",
             mnemonics: [
-              "Error connecting to AI service",
-              "WebSocket connection failed",
-              "Try again in a few minutes",
-              "Server might be restarting",
+              "Error: WebSocket connection to 'ws://localhost:3001/' failed",
+              "The tRPC WebSocket server needs to be running",
+              "Use 'npm run dev' in a separate terminal window to start it",
+              "Ensure port 3001 is not blocked by firewall",
               "Contact support if the issue persists"
             ]
           };
