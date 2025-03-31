@@ -98,7 +98,10 @@ export function AiResults({ data }: AiResultsProps) {
           <div className="space-y-4 animate-fade-in">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">AI Analysis</h2>
             <div className="prose dark:prose-invert max-w-none">
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">{safeData.aiSummary}</p>
+              <p 
+                className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: safeData.aiSummary }}
+              />
             </div>
           </div>
         )}

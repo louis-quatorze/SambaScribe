@@ -123,16 +123,20 @@ const FALLBACK_MNEMONICS = [
 function formatSummaryAsHtml(summary: string): string {
   if (!summary) return '';
   
-  // Replace **text** with <b>text</b>
-  // The regex matches ** followed by any characters (non-greedy) until the next **
-  const formattedSummary = summary.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-  
-  // Handle case where text is already in HTML format (don't double-convert)
+  // If the text already contains proper HTML tags, return it as is
   if (summary.includes('<b>') && !summary.includes('**')) {
     return summary;
   }
   
-  return formattedSummary;
+  // If the text contains escaped HTML entities, unescape them first
+  const unescapedSummary = summary
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+  
+  // Replace **text** with <b>text</b>
+  // The regex matches ** followed by any characters (non-greedy) until the next **
+  return unescapedSummary.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
 }
 
 export async function aiProcessFile(filename: string): Promise<AiNotationData> {
