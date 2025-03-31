@@ -135,13 +135,16 @@ async function generateAISummary(
       
       const textPrompt = `I have a PDF file containing samba music notation with the filename "${filename}" and encoded in base64.
 This file contains actual musical notation that you should analyze.
-Based on this file, provide a concise summary (under 50 words) of what this notation contains.
+Based on this file, provide a concise summary (under 100 words) of what this notation contains.
+
 Focus on:
 - Musical instruments involved
 - Structure and flow of the music
 - Key elements like tempo, breaks, and unique patterns
 
-Keep the summary concise but informative.`;
+IMPORTANT: Include at least 2-3 specific elements or terms you found in the PDF (such as specific breaks, pattern names, or musical instructions). Put these terms in quotes to clearly identify them as direct content from the PDF.
+
+Keep the summary informative and mention ACTUAL CONTENT from the PDF.`;
 
       const result = await generateChatCompletion([
         { role: "system", content: "You are an expert in samba music notation and rhythm patterns with the ability to analyze PDF files." },
@@ -155,7 +158,9 @@ Keep the summary concise but informative.`;
       
 "${content.substring(0, 1500)}${content.length > 1500 ? '...' : ''}"
 
-Please provide a concise summary (under 50 words) of this notation. Focus on the key aspects like instruments, structure, and any special patterns.`;
+Please provide a concise summary (under 100 words) of this notation. Focus on the key aspects like instruments, structure, and any special patterns.
+
+IMPORTANT: Include at least 2-3 specific elements or terms you found in the text (put these in quotes).`;
 
       const result = await generateChatCompletion([
         { role: "system", content: "You are an expert in samba music notation and rhythm patterns." },
