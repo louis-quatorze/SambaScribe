@@ -124,21 +124,30 @@ async function generateAISummary(
 ): Promise<string> {
   try {
     if (isPdf) {
-      // For PDFs, use text-based approach instead of vision
-      const textPrompt = `I have a PDF file containing samba music notation with the filename "${filename}".
-Based on this filename, provide a concise summary (under 50 words) of what this notation might contain.
+      // For PDFs, send the base64 content for analysis
+      console.log(`Sending PDF for analysis: ${filename}, content length: ${content.length} chars`);
+      
+      // Check if the content is likely a valid base64 PDF
+      if (!content || content.length < 100) {
+        console.warn("PDF content appears invalid or too small");
+        return `Could not extract valid content from ${filename}. The file may be corrupted or empty.`;
+      }
+      
+      const textPrompt = `I have a PDF file containing samba music notation with the filename "${filename}" and encoded in base64.
+This file contains actual musical notation that you should analyze.
+Based on this file, provide a concise summary (under 50 words) of what this notation contains.
 Focus on:
-- Musical instruments likely involved
-- Possible structure and flow
-- Potential key elements like tempo, breaks, and unique patterns
+- Musical instruments involved
+- Structure and flow of the music
+- Key elements like tempo, breaks, and unique patterns
 
 Keep the summary concise but informative.`;
 
       const result = await generateChatCompletion([
-        { role: "system", content: "You are an expert in samba music notation and rhythm patterns." },
-        { role: "user", content: textPrompt }
+        { role: "system", content: "You are an expert in samba music notation and rhythm patterns with the ability to analyze PDF files." },
+        { role: "user", content: `${textPrompt}\n\nBase64 PDF content: ${content.substring(0, 50000)}${content.length > 50000 ? '...' : ''}` }
       ], 'O1');
-      console.log('Text-based PDF summary generated successfully');
+      console.log('PDF content-based summary generated successfully');
       return result.trim();
     } else {
       // For text content, use the regular chat API
@@ -173,11 +182,12 @@ async function generateAIMnemonics(
     let response: string;
     
     if (isPdf) {
-      // For PDFs, first try a text-based approach using the summary
-      const fallbackPrompt = `Based on this summary of a samba rhythm pattern: "${summary}"
+      // For PDFs, use both the summary and a portion of the base64 content
+      const pdfPrompt = `Based on this summary of a samba rhythm pattern: "${summary}"
       
-Create 5 vocal mnemonics (syllables like "DUM KA PA") that match the described rhythm patterns.
-Think about primary accents and syncopations mentioned in the summary.
+And using the PDF content provided in base64 format (which contains the actual notation),
+create 5 vocal mnemonics (syllables like "DUM KA PA") that match the rhythm patterns in the PDF.
+Look for patterns in the notation and create mnemonics that follow these rhythms.
 
 Here are examples of the types of mnemonics I am looking for:
 
@@ -195,12 +205,16 @@ Butterfly Break
 A possible mnemonic for this rhythm, called "Butterfly Break," is "Out of the Chrysalis." The phrase follows the rhythm, with each syllable aligning with a note.
 
 IMPORTANT: Return ONLY a valid JSON array of strings with your 5 best mnemonics.
-Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]`;
+Example: ["DUM ka DUM ka", "BOOM chk BOOM chk", ...]
+
+PDF base64 content (first part): ${content.substring(0, 10000)}${content.length > 10000 ? '...' : ''}`;
 
       response = await generateChatCompletion([
-        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns." },
-        { role: "user", content: fallbackPrompt }
+        { role: "system", content: "You are an expert in creating vocal mnemonics for samba rhythm patterns with the ability to analyze PDF content." },
+        { role: "user", content: pdfPrompt }
       ], 'O1');
+      
+      console.log('Generated mnemonics using PDF content');
     } else {
       // For text content
       const prompt = `Based on this summary: "${summary}" 
