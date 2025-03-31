@@ -11,8 +11,6 @@ export interface AiNotationData {
 
 // Special mnemonics for specific patterns
 const specialMnemonics = {
-  'butterfly': 'Butterfly Break: "Out of the Chrysalis" (1-2 - 3-triplet-6)',
-  'ballerina': 'Ballerina Break: "Tchai-ko-vsky" (three even beats)',
   'entrada': 'Entrada: "LET-me-IN-to-the-PAR-ty" (entrance pattern)',
   'paradiddle': 'Paradiddle: "pa-ra-di-dle pa-ra-di-dle" (alternating hands)',
   'surdo1': 'Surdo 1: "BOOM --- BOOM ---" (strong beats on 1 and 3)',

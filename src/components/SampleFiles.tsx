@@ -19,15 +19,16 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const sampleFiles: SampleFile[] = [
-    {
-      id: "bossa2",
-      title: "Bossa 2",
-      filename: "1743300266823-Bossa 2-Terceira.pdf"
-    },
+
     {
       id: "aainjaa",
       title: "Aainjaa",
       filename: "1743300481733-Aainjaa-Terceira.pdf"
+    },    
+    {
+        id: "bossa2",
+        title: "Mangueira",
+        filename: "1743300266823-Bossa 2-Terceira.pdf"
     },
     {
       id: "sambaDaMusa",
