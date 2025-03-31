@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { generateChatCompletion } from '@/lib/aiClient';
+import { existsSync } from 'fs';
 
 export interface AiNotationData {
   filename: string;
@@ -8,19 +9,60 @@ export interface AiNotationData {
   mnemonics: string[];
 }
 
+// This is a dynamic import with a try/catch to prevent build errors
+const getPdfParser = async () => {
+  try {
+    return (await import('pdf-parse')).default;
+  } catch (error) {
+    console.error('Failed to import pdf-parse:', error);
+    return null;
+  }
+};
+
 export async function aiProcessFile(filename: string): Promise<AiNotationData> {
   try {
     if (!filename || typeof filename !== 'string') {
       throw new Error('Invalid filename provided');
     }
 
-    // Instead of parsing the PDF, we'll just use the filename for context
+    // Read the file path
+    const filePath = join(process.cwd(), 'uploads', filename);
+    
+    // Check if file exists
+    if (!existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+    
+    // Determine file type and read content appropriately
     const isPdf = filename.toLowerCase().endsWith('.pdf');
     const fileType = isPdf ? 'PDF' : 'text file';
     
-    // Generate AI summary based on the file context
-    const aiSummary = await generateAISummary(filename, fileType);
-    const mnemonics = await generateAIMnemonics(aiSummary);
+    let fileContent = '';
+    
+    // Parse based on file type
+    if (isPdf) {
+      try {
+        const pdfParser = await getPdfParser();
+        if (!pdfParser) {
+          throw new Error('PDF parser not available');
+        }
+        
+        const dataBuffer = await readFile(filePath);
+        const pdfData = await pdfParser(dataBuffer);
+        fileContent = pdfData.text || 'No text content extracted from PDF';
+        console.log('PDF extraction successful for file:', filename);
+      } catch (pdfError) {
+        console.error('Error parsing PDF:', pdfError);
+        fileContent = `Error extracting content from PDF. Analyzing based on file name: ${filename}`;
+      }
+    } else {
+      // For text files, read directly
+      fileContent = await readFile(filePath, 'utf-8');
+    }
+    
+    // Generate AI summary based on the file content
+    const aiSummary = await generateAISummary(filename, fileType, fileContent);
+    const mnemonics = await generateAIMnemonics(aiSummary, fileContent);
 
     return {
       filename,
@@ -33,17 +75,26 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
   }
 }
 
-async function generateAISummary(filename: string, fileType: string): Promise<string> {
+async function generateAISummary(filename: string, fileType: string, fileContent: string): Promise<string> {
+  // Create a truncated version of the content if it's too long
+  const truncatedContent = fileContent.length > 4000 
+    ? fileContent.substring(0, 4000) + "... (content truncated)"
+    : fileContent;
+
   const prompt = `
     I'm analyzing a ${fileType} named "${filename}" that contains samba notation.
     
-    Without actually seeing the content, provide a helpful summary of what samba notation typically includes:
+    Here's the content of the file:
     
-    1. Common instruments and their typical patterns
-    2. How different sections might be structured
-    3. Key elements like tempo markings, breaks, and transitions
+    ${truncatedContent}
     
-    Keep your response under 200 words and focus on being educational about samba rhythm notation.
+    Please provide a helpful summary of what this samba notation includes:
+    
+    1. Identify the instruments and their patterns shown in the notation
+    2. Describe how different sections are structured
+    3. Note any key elements like tempo markings, breaks, and transitions
+    
+    Keep your response under 200 words and focus on being educational about the specific samba rhythm notation in this file.
   `;
   
   return await generateChatCompletion([
@@ -52,21 +103,22 @@ async function generateAISummary(filename: string, fileType: string): Promise<st
   ], "O1");
 }
 
-async function generateAIMnemonics(contextSummary: string): Promise<string[]> {
+async function generateAIMnemonics(contextSummary: string, fileContent: string): Promise<string[]> {
   const prompt = `
-    Based on this context about samba notation:
+    Based on this samba notation content summary:
     
     "${contextSummary}"
     
-    Create 5 helpful vocal mnemonics that would help a musician remember common samba rhythm patterns.
+    And considering the original notation, create 5 helpful vocal mnemonics that would help a musician 
+    remember the specific rhythm patterns shown in this notation.
+    
     A mnemonic is a verbal or spoken pattern that helps remember the rhythm.
     
     For example:
     - For a simple surdo pattern: "BUM-pause-BUM-pause"
     - For a caixa pattern: "chi-chi-chi-CHI-chi-chi-CHI"
     
-    Return ONLY a JSON array of strings with 5 different vocal mnemonics for different 
-    common samba instruments (surdo, caixa, repinique, tamborim, agogo).
+    Return ONLY a JSON array of strings with 5 different vocal mnemonics.
     The response must be a valid JSON array that can be parsed with JSON.parse().
   `;
   

@@ -32,12 +32,6 @@ export function HomePage() {
             <p className="text-center text-gray-600 dark:text-gray-400">
               Upload a samba notation file for AI-powered analysis and mnemonic generation
             </p>
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-md mt-4 max-w-xl mx-auto">
-              <p className="text-sm text-yellow-600 dark:text-yellow-400 text-center">
-                PDF parsing has been simplified to avoid technical errors.
-                The AI will provide general information based on the file name.
-              </p>
-            </div>
             <PdfUpload onProcessComplete={handleProcessComplete} />
             
             {aiResults && (

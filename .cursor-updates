@@ -13,6 +13,9 @@
 - Fixed issue with AI analysis results not displaying by improving error handling and adding robust data validation in PdfUpload component and aiPdfProcessor service.
 - Modified page.tsx to use HomePage component for displaying AI analysis from uploaded files.
 - Created a sample samba notation file for testing the AI analysis functionality.
+- Enhanced AI analysis to read and analyze the actual content of uploaded files instead of just using the filename.
+- Added PDF parsing support using pdf-parse library for proper PDF document analysis.
+- Updated UI text to reflect that analysis is now based on actual file content.
 
 # SambaScribe Updates
 

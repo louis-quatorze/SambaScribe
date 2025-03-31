@@ -56,8 +56,7 @@ export function AiResults({ data }: AiResultsProps) {
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
               <p className="text-sm text-blue-600 dark:text-blue-400">
-                Note: This is a general analysis of samba notation based on the file name. 
-                PDF parsing has been simplified to avoid technical errors.
+                Note: This analysis is based on the actual content of your uploaded file.
               </p>
             </div>
           </div>
@@ -79,7 +78,7 @@ export function AiResults({ data }: AiResultsProps) {
             )}
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md mt-4">
               <p className="text-sm text-blue-600 dark:text-blue-400">
-                These mnemonics are general examples for common samba patterns rather than specific to your file's content.
+                These mnemonics are specific to the rhythm patterns found in your uploaded file.
               </p>
             </div>
           </div>
