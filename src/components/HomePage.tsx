@@ -4,14 +4,64 @@ import { useState, useRef, useEffect } from "react";
 import { PdfUpload } from "@/components/PdfUpload";
 import { AiResults } from "@/components/AiResults";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
+import { toast } from "react-toastify";
+
+interface PartialAiResults {
+  filename: string;
+  aiSummary: string;
+  mnemonics?: string[];
+}
 
 export function HomePage() {
-  const [aiResults, setAiResults] = useState<AiNotationData | null>(null);
+  const [aiResults, setAiResults] = useState<PartialAiResults | null>(null);
+  const [isLoadingMnemonics, setIsLoadingMnemonics] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const handleProcessComplete = (data: AiNotationData) => {
-    console.log("HomePage received AI data:", data);
+  const handleProcessComplete = (data: PartialAiResults) => {
+    console.log("HomePage received initial AI data:", data);
     setAiResults(data);
+    
+    // If mnemonics are not included, set loading state and fetch them separately
+    if (!data.mnemonics) {
+      setIsLoadingMnemonics(true);
+      fetchMnemonics(data.filename, data.aiSummary);
+    }
+  };
+  
+  const fetchMnemonics = async (filename: string, summary: string) => {
+    try {
+      const response = await fetch("/api/generate-mnemonics", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          filename,
+          summary 
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to generate mnemonics");
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.mnemonics) {
+        setAiResults(prev => prev ? {
+          ...prev,
+          mnemonics: data.mnemonics
+        } : null);
+        toast.success("Mnemonics generated successfully");
+      } else {
+        throw new Error("Invalid mnemonic data received");
+      }
+    } catch (error) {
+      console.error("Error generating mnemonics:", error);
+      toast.error("Failed to generate mnemonics. Please try again.");
+    } finally {
+      setIsLoadingMnemonics(false);
+    }
   };
 
   // Scroll to results when they become available
@@ -42,7 +92,10 @@ export function HomePage() {
                 <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-4">
                   AI Analysis Results
                 </h2>
-                <AiResults data={aiResults} />
+                <AiResults 
+                  data={aiResults as AiNotationData} 
+                  isLoadingMnemonics={isLoadingMnemonics}
+                />
               </div>
             )}
           </section>

@@ -9,6 +9,12 @@ export interface AiNotationData {
   mnemonics: string[];
 }
 
+export interface PartialAiNotationData {
+  filename: string;
+  aiSummary: string;
+  mnemonics?: string[];
+}
+
 // This is a dynamic import with a try/catch to prevent build errors
 const getPdfParser = async () => {
   try {
@@ -19,7 +25,7 @@ const getPdfParser = async () => {
   }
 };
 
-export async function aiProcessFile(filename: string): Promise<AiNotationData> {
+export async function aiProcessFile(filename: string): Promise<PartialAiNotationData> {
   try {
     if (!filename || typeof filename !== 'string') {
       throw new Error('Invalid filename provided');
@@ -62,16 +68,49 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
     
     // Generate AI summary based on the file content
     const aiSummary = await generateAISummary(filename, fileType, fileContent);
-    const mnemonics = await generateAIMnemonics(aiSummary, fileContent);
-
+    
+    // Return just the summary first for immediate display
+    // Mnemonics will be generated in a separate API call
     return {
       filename,
-      aiSummary,
-      mnemonics
+      aiSummary
     };
   } catch (error) {
     console.error('AI processing error:', error);
     throw error instanceof Error ? error : new Error('Failed to process file with AI');
+  }
+}
+
+// Function to generate mnemonics separately
+export async function generateMnemonics(filename: string, summary: string): Promise<string[]> {
+  try {
+    // Get file content for context
+    let fileContent = '';
+    try {
+      const filePath = join(process.cwd(), 'uploads', filename);
+      if (existsSync(filePath)) {
+        const isPdf = filename.toLowerCase().endsWith('.pdf');
+        
+        if (isPdf) {
+          const pdfParser = await getPdfParser();
+          if (pdfParser) {
+            const dataBuffer = await readFile(filePath);
+            const pdfData = await pdfParser(dataBuffer);
+            fileContent = pdfData.text || '';
+          }
+        } else {
+          fileContent = await readFile(filePath, 'utf-8');
+        }
+      }
+    } catch (error) {
+      console.error('Error reading file for mnemonics generation:', error);
+      // Continue with summary only if file reading fails
+    }
+    
+    return await generateAIMnemonics(summary, fileContent);
+  } catch (error) {
+    console.error('Mnemonics generation error:', error);
+    throw error instanceof Error ? error : new Error('Failed to generate mnemonics');
   }
 }
 

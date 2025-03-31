@@ -16,6 +16,9 @@
 - Enhanced AI analysis to read and analyze the actual content of uploaded files instead of just using the filename.
 - Added PDF parsing support using pdf-parse library for proper PDF document analysis.
 - Updated UI text to reflect that analysis is now based on actual file content.
+- Implemented progressive loading of AI analysis results with mnemonics displayed in a separate phase.
+- Created a new API endpoint for generating mnemonics independently from the initial analysis.
+- Changed the default tab to show mnemonics first with a loading state.
 
 # SambaScribe Updates
 
