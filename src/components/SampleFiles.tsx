@@ -44,7 +44,7 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
       setIsProcessing(file.id);
       toast.info(`AI is analyzing ${file.title}...`);
 
-      const aiProcessResponse = await fetch("/api/ai-process", {
+      const aiProcessResponse = await fetch("/api/process", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

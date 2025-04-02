@@ -15,48 +15,16 @@ export interface AiNotationData {
 
 // Special mnemonics for specific patterns
 const specialMnemonics = {
-  'entrada': { 
-    text: 'LET-me-IN-to-the-PAR-ty', 
-    pattern: 'Entrada', 
-    description: 'entrance pattern'
-  },
-  'paradiddle': { 
-    text: 'pa-ra-di-dle pa-ra-di-dle', 
-    pattern: 'Paradiddle', 
-    description: 'alternating hands' 
-  },
-  'surdo1': { 
-    text: 'BOOM --- BOOM ---', 
-    pattern: 'Surdo 1', 
-    description: 'strong beats on 1 and 3' 
-  },
-  'surdo2': { 
-    text: 'BOOM --- BOOM ---', 
-    pattern: 'Surdo 2', 
-    description: 'strong beats on 2 and 4' 
-  },
-  'caixa': { 
-    text: 'ta-ka ta-ka-ta ta-ka ta-ka-ta', 
-    pattern: 'Caixa', 
-    description: 'sixteenth note pattern' 
-  },
-  'repinique': { 
-    text: 'din-din-din DOOM KA', 
-    pattern: 'Repinique', 
-    description: 'call pattern' 
-  },
-  'tamborim': { 
-    text: 'TIC-a-tic-a-TIC-a-tic-a', 
-    pattern: 'Tamborim', 
-    description: 'teleco-teco pattern' 
-  }
 };
 
-// Common prompt templates for AI calls
+// Default section identifiers for samba notation
+const DEFAULT_SECTION_IDENTIFIERS = ['Intro', 'Groove', 'Break', 'Outro'];
+
+// All prompt templates and examples for AI calls
 const PROMPT_TEMPLATES = {
   // System prompts
   SYSTEM_SUMMARY: "You are an expert in samba music notation and Brazilian percussion with extensive knowledge of rhythm patterns, breaks, and common samba notation conventions.",
-  SYSTEM_MNEMONICS: "You are a music educator, helping to create rhythmic mnemonics for specific musical patterns. You have deep knowledge of percussion notation and Brazilian rhythmic traditions, and excel at creating mnemonics with a one-to-one mapping between notes and syllables.",
+  SYSTEM_MNEMONICS: "You are a music educator, specializing in samba percussion. Your task is to create accurate vocal mnemonics that match the rhythm patterns in the notation. These mnemonics should have a one-to-one mapping between syllables and notes.",
   
   // File introduction templates
   FILE_INTRO: (fileType: string, filename: string) => 
@@ -77,73 +45,128 @@ Include the following types of information if present:
 - Tempo markings
 - Dynamic markings (forte, piano, etc.)
 - Performance instructions
-- Section labels (A, B, intro, coda, etc.)
+- Section labels (intro, outro, break, ...)
 
 IMPORTANT: Format key instruments, patterns, or technical terms by wrapping them in double asterisks for emphasis (e.g., **surdo**, **tamborim**, **butterfly break**). This will make important terms stand out in the summary.`,
 
-  // Mnemonics examples
+  // Example patterns for mnemonics
   MNEMONICS_EXAMPLES: `
-Here are examples of common samba rhythm patterns and effective mnemonics:
+Here are examples of samba rhythm patterns and effective mnemonics:
 
 "examples": [
   {
-    "break_name": "Butterfly Break",
+    "section_name": "Butterfly Break",
     "rhythmic_pattern": "Quarter note, [Space], Quarter note, [Space], Quarter note, [Space], Eighth note, Eighth note, [Space], Eighth note",
     "expected_result": {
-      "mnemonic": "Out of the Chry-sa-lis",
-      "explanation": "A mnemonic with syllables that directly correspond to the rhythm, using the theme of 'butterfly'."
+      "text": "Out of the Chry-sa-lis",
+      "pattern": "Butterfly Break",
+      "description": "A mnemonic with syllables that directly correspond to the rhythm, using the theme of 'butterfly'."
     }
   },
   {
-    "break_name": "Ballerina Break",
+    "section_name": "Ballerina Break",
     "rhythmic_pattern": "Eighth note, Eighth note, Eighth note",
-    "expected_result": {
-      "mnemonic": "Tchai-ko-vsky",
-      "explanation": "The three syllables of 'Tchaikovsky' match the three evenly spaced notes. Inspired by classical music, this mnemonic aligns with the theme, as Tchaikovsky is famous for composing ballet masterpieces like Swan Lake and The Nutcracker."
+    "expected_result": {     
+      "text": "Tchai-ko-vsky",
+      "pattern": "Ballerina Break",
+      "description": "The three syllables of 'Tchaikovsky' match the three evenly spaced notes. Inspired by classical music, this mnemonic aligns with the theme, as Tchaikovsky is famous for composing ballet masterpieces like Swan Lake and The Nutcracker."    
     }
+  }
+]`,
+
+  // Base prompt for mnemonics generation
+  MNEMONICS_BASE: `
+Using the PDF content provided, generate 10 rhythm mnemonics that correspond to specific sections of the notation, following the same order as they appear in the music sheet, focus on breaks.
+
+For each mnemonic, provide:
+- Mnemonic text (syllables matching the rhythm)
+- Pattern/section name (IMPORTANT: must match EXACTLY theactual section labels from the PDF, such as "Groove," "Agogo Feature," "Break")
+- Brief description of the rhythm, less than 10 words.
+
+Guidelines:
+- Ensure mnemonics reflect the true rhythmic structure found in the notation.
+- Use syllables that are easy to pronounce and remember.
+- Consider accents, syncopation, and dynamics.
+- Mnemonics should help musicians internalize and recall the rhythm effectively.
+- Use only real section names from the PDF (do not invent new ones like "Section 1, Section 2").
+
+Output Format:
+Return a JSON array of objects, strictly following this structure array
+[
+  {
+    "text": "the mnemonic syllables",
+    "pattern": "the section label from the PDF",
+    "description": "brief description of the rhythm"
   }
 ]
 
-Example 3: Entrada (Entrance pattern)
-♩ ♪ ♪ ♩ ♪ ♪ ♩ ♩
-Notation: Quarter note, two eighth notes, repeated, then two quarter notes
-Mnemonic: "LET-me-IN-to-the-PAR-ty"
-Captures the entrance rhythm with appropriate emphasis.
+Do not include additional text before or after the JSON output.
+Example:
+[
+  {
+    "text": "Out of the Chry-sa-lis",
+    "pattern": "Butterfly Break",
+    "description": "A mnemonic that aligns syllables with the rhythm, using a butterfly theme."
+  },
+  {
+    "text": "Tchai-ko-vsky",
+    "pattern": "Ballerina Break",
+    "description": "Matches three evenly spaced notes, inspired by ballet composer Tchaikovsky."
+  }
+]  
+`,
 
-Example 4: Paradiddle (Alternating hands pattern)
-♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪
-Notation: Eight even eighth notes with alternating accents
-Mnemonic: "pa-ra-di-dle pa-ra-di-dle"
-Traditional drum rudiment vocalization that matches the alternating pattern.
+  // Full prompts for different scenarios
+  PDF_SUMMARY: (filename: string) => `
+${PROMPT_TEMPLATES.FILE_INTRO('PDF', filename)} and encoded in base64.
+This file contains actual musical notation that you should analyze.
+Based on this file, provide a concise summary (under 100 words) of what this notation contains.
 
-Example 5: Samba Basic Pattern
-♩ ♪♬ ♩ ♪♬
-Notation: Quarter note followed by triplet, repeated
-Mnemonic: "BOOM da-ga BOOM da-ga"
-The heavier "BOOM" syllable represents the strong beat, while "da-ga" captures the triplet feel.`,
+${PROMPT_TEMPLATES.SUMMARY_REQUEST}
 
-  // Mnemonics instructions
-  MNEMONICS_INSTRUCTIONS: `
-IMPORTANT INSTRUCTIONS:
-1. Create mnemonics that accurately reflect the rhythm pattern in the notation
-2. Use syllables that are easy to pronounce and remember
-3. Consider the accents and dynamics of the pattern
-4. Include some contextual meaning if possible (like "Tchaikovsky" for ballet-related patterns)
-5. Make sure your mnemonics help musicians remember and internalize the rhythms
-6. You MUST return ONLY a valid JSON array of strings with your 5 best mnemonics
-7. Do not include any additional text before or after the JSON array
+IMPORTANT: Include at least 3 specific elements or terms you found in the PDF (such as specific breaks, pattern names, or musical instructions). Put these terms in quotes AND format important terms by wrapping them in double asterisks (e.g., **"surdo"**, **"butterfly break"**) to highlight key terminology.
 
-Example response format:
-["DUM ka DUM ka", "BOOM chk BOOM chk", "TA-ki-TA-ki", "SUR-do-RE-pi-QUE", "TUM tiki TUM tiki"]`
+Keep the summary informative and highlight the most important aspects of the notation for a samba drummer.`,
+
+  TEXT_SUMMARY: (filename: string, content: string) => `
+${PROMPT_TEMPLATES.FILE_INTRO('text file', filename)} and the following content:
+      
+"${content.substring(0, 1500)}${content.length > 1500 ? '...' : ''}"
+
+Please provide a concise summary (under 100 words) of this notation. 
+
+${PROMPT_TEMPLATES.SUMMARY_REQUEST}
+
+IMPORTANT: Include at least 3-4 specific elements or terms you found in the text. Format important terms by wrapping them in double asterisks (e.g., **surdo**, **butterfly break**) to highlight key terminology.`,
+
+  PDF_MNEMONICS: (content: string) => `
+Using the PDF content provided in base64 format (which contains the actual notation),
+create 10 vocal mnemonics (syllables or words) that match the rhythm patterns in the PDF.
+Look for patterns in the notation and create mnemonics that follow these rhythms.
+
+${PROMPT_TEMPLATES.MNEMONICS_BASE}
+
+${PROMPT_TEMPLATES.MNEMONICS_EXAMPLES}
+
+PDF base64 content (first part): ${content.substring(0, 100000)}${content.length > 100000 ? '...' : ''}`,
+
+  TEXT_MNEMONICS: (summary: string, content: string) => `
+Based on this summary: "${summary}" 
+      
+And this samba notation content:
+"${content.substring(0, 1000)}${content.length > 1000 ? '...' : ''}"
+
+Create 20 vocal mnemonics (syllables or words) that match the rhythm patterns in this notation.
+Consider the primary accents, syncopations, and any special patterns described.
+
+${PROMPT_TEMPLATES.MNEMONICS_BASE}
+
+${PROMPT_TEMPLATES.MNEMONICS_EXAMPLES}`
 };
 
 // Fallback mnemonics when AI generation fails
 const FALLBACK_MNEMONICS = [
-  { text: "DUM ka DUM ka", pattern: "Basic Pattern", description: "even quarter notes" },
-  { text: "BOOM chk BOOM chk", pattern: "Basic Pattern", description: "alternating strong and weak beats" },
-  { text: "DUM DUM PA pa", pattern: "Basic Pattern", description: "accented pattern" },
-  { text: "TA ki TA ki TA", pattern: "Basic Pattern", description: "syncopated rhythm" },
-  { text: "BOOM pa BOOM pa", pattern: "Basic Pattern", description: "surdo-like pattern" }
+  { text: "DUM ka DUM ka", pattern: "Basic Pattern", description: "even quarter notes" }
 ];
 
 /**
@@ -214,42 +237,17 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
     // Format the summary to convert markdown bold to HTML bold
     aiSummary = formatSummaryAsHtml(aiSummary);
     
-    // Pattern detection - check for pattern names in filename, content and AI summary
-    const patternDetectors = {
-      'butterfly': [
-        'butterfly', 'chrysalis', 'flutter'
-      ],
-      'ballerina': [
-        'ballerina', 'ballet', 'tchaikovsky', 'dance', 'tchaikovsk'
-      ],
-      'entrada': [
-        'entrada', 'entrance', 'intro', 'introduction', 'let me in'
-      ],
-      'paradiddle': [
-        'paradiddle', 'alternating hands', 'rudiment', 'alternating sticking'
-      ],
-      'surdo1': [
-        'surdo 1', 'surdo one', 'first surdo', 'marcação', 'marcacao', 'marked beat'
-      ],
-      'surdo2': [
-        'surdo 2', 'surdo two', 'second surdo', 'resposta', 'response beat'
-      ],
-      'caixa': [
-        'caixa', 'snare', 'tarol', 'guerra'
-      ],
-      'repinique': [
-        'repinique', 'repique', 'repis', 'rep'
-      ],
-      'tamborim': [
-        'tamborim', 'teleco-teco', 'teleco', 'carreteiro'
-      ]
+    // Define pattern detectors with proper typing
+    const patternDetectors: Record<string, string[]> = {
+      // Add your pattern detectors here if needed
     };
-    
+
     // Check for each pattern
     const detectedPatterns: Record<string, boolean> = {};
     
     // Function to check if content includes any of the terms
-    const contentIncludesAny = (terms: string[], content: string): boolean => {
+    const contentIncludesAny = (terms: string[], content: string | undefined): boolean => {
+      if (!content) return false;
       const lowerContent = content.toLowerCase();
       return terms.some(term => lowerContent.includes(term.toLowerCase()));
     };
@@ -307,25 +305,19 @@ async function generateAISummary(
 ): Promise<string> {
   try {
     if (isPdf) {
-      // For PDFs, send the base64 content for analysis
       console.log(`Sending PDF for analysis: ${filename}, content length: ${content.length} chars`);
       
-      // Check if the content is likely a valid base64 PDF
       if (!content || content.length < 100) {
         console.warn("PDF content appears invalid or too small");
         return `Could not extract valid content from ${filename}. The file may be corrupted or empty.`;
       }
       
-      const fileIntro = PROMPT_TEMPLATES.FILE_INTRO('PDF', filename);
-      const textPrompt = `${fileIntro} and encoded in base64.
-This file contains actual musical notation that you should analyze.
-Based on this file, provide a concise summary (under 100 words) of what this notation contains.
+      const textPrompt = PROMPT_TEMPLATES.PDF_SUMMARY(filename);
 
-${PROMPT_TEMPLATES.SUMMARY_REQUEST}
-
-IMPORTANT: Include at least 3-4 specific elements or terms you found in the PDF (such as specific breaks, pattern names, or musical instructions). Put these terms in quotes AND format important terms by wrapping them in double asterisks (e.g., **"surdo"**, **"butterfly break"**) to highlight key terminology.
-
-Keep the summary informative and highlight the most important aspects of the notation for a samba drummer.`;
+      console.log('\n=== SUMMARY PROMPT ===\n');
+      console.log('System:', PROMPT_TEMPLATES.SYSTEM_SUMMARY);
+      console.log('\nUser:', textPrompt);
+      console.log('\n===================\n');
 
       const result = await generateChatCompletion([
         { role: "system", content: PROMPT_TEMPLATES.SYSTEM_SUMMARY },
@@ -334,17 +326,12 @@ Keep the summary informative and highlight the most important aspects of the not
       console.log('PDF content-based summary generated successfully');
       return result.trim();
     } else {
-      // For text content, use the regular chat API
-      const fileIntro = PROMPT_TEMPLATES.FILE_INTRO(fileType, filename);
-      const prompt = `${fileIntro} and the following content:
-      
-"${content.substring(0, 1500)}${content.length > 1500 ? '...' : ''}"
+      const prompt = PROMPT_TEMPLATES.TEXT_SUMMARY(filename, content);
 
-Please provide a concise summary (under 100 words) of this notation. 
-
-${PROMPT_TEMPLATES.SUMMARY_REQUEST}
-
-IMPORTANT: Include at least 3-4 specific elements or terms you found in the text. Format important terms by wrapping them in double asterisks (e.g., **surdo**, **butterfly break**) to highlight key terminology.`;
+      console.log('\n=== SUMMARY PROMPT (TEXT) ===\n');
+      console.log('System:', PROMPT_TEMPLATES.SYSTEM_SUMMARY);
+      console.log('\nUser:', prompt);
+      console.log('\n===================\n');
 
       const result = await generateChatCompletion([
         { role: "system", content: PROMPT_TEMPLATES.SYSTEM_SUMMARY },
@@ -365,28 +352,19 @@ IMPORTANT: Include at least 3-4 specific elements or terms you found in the text
 async function generateAIMnemonics(
   summary: string, 
   content: string, 
-  isPdf: boolean
+  isPdf: boolean,
+  sectionIdentifiers: string[] = DEFAULT_SECTION_IDENTIFIERS
 ): Promise<Array<{ text: string; pattern?: string; description?: string }>> {
   try {
     let response: string;
-    const mnemonicsPromptBase = `
-You are to act as a music educator, helping to create rhythmic mnemonics for specific musical patterns. I will provide you with a file containing standard musical notation. This includes time signatures, rhythmic figures, and performance directions. The mnemonic should have a one-to-one mapping between the notes and the syllables of the mnemonic, using the same theme as the break name.
-
-${PROMPT_TEMPLATES.MNEMONICS_EXAMPLES}
-
-${PROMPT_TEMPLATES.MNEMONICS_INSTRUCTIONS}`;
     
     if (isPdf) {
-      // For PDFs, use both the summary and a portion of the base64 content
-      const pdfPrompt = `Based on this summary of a samba rhythm pattern: "${summary}"
-      
-And using the PDF content provided in base64 format (which contains the actual notation),
-create 5 vocal mnemonics (syllables or words) that match the rhythm patterns in the PDF.
-Look for patterns in the notation and create mnemonics that follow these rhythms.
+      const pdfPrompt = PROMPT_TEMPLATES.PDF_MNEMONICS(content);
 
-${mnemonicsPromptBase}
-
-PDF base64 content (first part): ${content.substring(0, 10000)}${content.length > 10000 ? '...' : ''}`;
+      console.log('\n=== MNEMONICS PROMPT (PDF) ===\n');
+      console.log('System:', PROMPT_TEMPLATES.SYSTEM_MNEMONICS);
+      console.log('\nUser:', pdfPrompt.replace(/PDF base64 content.*$/, 'PDF base64 content: [CONTENT_OMITTED]'));
+      console.log('\n===================\n');
 
       response = await generateChatCompletion([
         { role: "system", content: PROMPT_TEMPLATES.SYSTEM_MNEMONICS },
@@ -395,16 +373,12 @@ PDF base64 content (first part): ${content.substring(0, 10000)}${content.length 
       
       console.log('Generated mnemonics using PDF content');
     } else {
-      // For text content
-      const prompt = `Based on this summary: "${summary}" 
-      
-And this samba notation content:
-"${content.substring(0, 1000)}${content.length > 1000 ? '...' : ''}"
+      const prompt = PROMPT_TEMPLATES.TEXT_MNEMONICS(summary, content);
 
-Create 5 vocal mnemonics (syllables or words) that match the rhythm patterns in this notation.
-Consider the primary accents, syncopations, and any special patterns described.
-
-${mnemonicsPromptBase}`;
+      console.log('\n=== MNEMONICS PROMPT (TEXT) ===\n');
+      console.log('System:', PROMPT_TEMPLATES.SYSTEM_MNEMONICS);
+      console.log('\nUser:', prompt);
+      console.log('\n===================\n');
 
       response = await generateChatCompletion([
         { role: "system", content: PROMPT_TEMPLATES.SYSTEM_MNEMONICS },
@@ -423,36 +397,36 @@ ${mnemonicsPromptBase}`;
     
     // Try to extract a JSON array
     try {
-      // Find anything that looks like a JSON array
-      const jsonMatch = response.match(/\[\s*"[^"]*"(?:\s*,\s*"[^"]*")*\s*\]/);
-      if (jsonMatch) {
-        const rawMnemonics = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(rawMnemonics) && rawMnemonics.length > 0) {
-          console.log('Extracted mnemonics:', rawMnemonics);
-          // Convert string array to object array with default pattern
-          return rawMnemonics.slice(0, 5).map(text => ({
-            text,
-            pattern: "Rhythm Pattern",
-            description: "detected pattern"
-          }));
+      // First, try to extract JSON from code fence if present
+      let jsonContent = response;
+      const codeBlockMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonContent = codeBlockMatch[1].trim();
+        console.log('Extracted JSON content from code fence:', jsonContent);
+      }
+
+      // Try to parse the JSON content
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(jsonContent);
+      } catch (e) {
+        // If parsing fails, try to find a JSON array in the response
+        const jsonMatch = response.match(/\[\s*\{[^}]*\}(?:\s*,\s*\{[^}]*\})*\s*\]/);
+        if (jsonMatch) {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } else {
+          throw e;
         }
       }
-      
-      // If we can't find a proper JSON array but can extract strings, build an array
-      const stringMatches = response.match(/"([^"]*)"/g);
-      if (stringMatches && stringMatches.length > 0) {
-        const rawMnemonics = stringMatches
-          .map(match => match.replace(/"/g, ''))
-          .filter(Boolean);
-        
-        if (rawMnemonics.length > 0) {
-          console.log('Extracted mnemonics from strings:', rawMnemonics);
-          return rawMnemonics.slice(0, 5).map(text => ({
-            text,
-            pattern: "Rhythm Pattern", 
-            description: "detected pattern"
-          }));
-        }
+
+      if (Array.isArray(parsedResponse) && parsedResponse.length > 0) {
+        console.log('Extracted mnemonics:', parsedResponse);
+        // Convert the response to our expected format
+        return parsedResponse.slice(0, 5).map(item => ({
+          text: item.text,
+          pattern: item.pattern || item.section,
+          description: item.description
+        }));
       }
     } catch (parseError) {
       console.warn('Failed to parse mnemonics JSON:', parseError);
@@ -460,9 +434,15 @@ ${mnemonicsPromptBase}`;
     
     // Fallback mnemonics if we couldn't parse any
     console.warn('Using fallback mnemonics');
-    return FALLBACK_MNEMONICS;
+    return FALLBACK_MNEMONICS.map((mnemonic, index) => ({
+      ...mnemonic,
+      pattern: sectionIdentifiers[index % sectionIdentifiers.length]
+    }));
   } catch (error) {
     console.error('AI mnemonics generation error:', error);
-    return FALLBACK_MNEMONICS;
+    return FALLBACK_MNEMONICS.map((mnemonic, index) => ({
+      ...mnemonic,
+      pattern: sectionIdentifiers[index % sectionIdentifiers.length]
+    }));
   }
 } 

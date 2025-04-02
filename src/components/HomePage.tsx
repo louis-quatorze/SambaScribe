@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { PdfUpload } from "@/components/PdfUpload";
 import { AiResults } from "@/components/AiResults";
 import { SampleFiles } from "@/components/SampleFiles";
@@ -48,9 +49,11 @@ export function HomePage() {
       <main className="flex-1 flex flex-col w-full mx-auto">
         <div className="flex-1 flex flex-col items-start justify-center bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950">
           <section className="max-w-7xl w-full space-y-8 animate-fade-in p-4">
-            <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-              SambaScribe - AI Samba Notation Guide
-            </h1>
+            <Link href="/" className="block">
+              <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                SambaScribe - AI Samba Notation Guide
+              </h1>
+            </Link>
             <p className="text-center text-gray-600 dark:text-gray-400">
               Upload a samba notation file for AI-powered analysis and mnemonic generation
             </p>

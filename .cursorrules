@@ -82,6 +82,10 @@ Additional
 - Reusable logic in `src/lib/utils/shared.ts` or `src/lib/utils/server.ts`.
 - Use `tsx` scripts for migrations.
 
+Server Management
+- Before starting a server via 'npm run dev', ensure any existing server is shut down to avoid running on ports 3001, 3002, etc.
+- Use Ctrl+C to properly terminate the server process.
+
 IMPORTANT:
 
 - After all changes are made, ALWAYS build the project with `npm run build`. Ignore warnings, fix errors.

@@ -92,7 +92,7 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
       toast.info("AI is analyzing your file...");
       
       try {
-        const aiProcessResponse = await fetch("/api/ai-process", {
+        const aiProcessResponse = await fetch("/api/process", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
