@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
-import { FileText, BookOpen, ScrollText } from "lucide-react";
+import { FileText, BookOpen, ScrollText, Music, ListMusic } from "lucide-react";
 
 interface AiResultsProps {
   data: AiNotationData;
 }
 
 export function AiResults({ data }: AiResultsProps) {
-  const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics' | 'verification'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'mnemonics' | 'verification' | 'sections'>('summary');
 
   // Add more extensive debug logging
   useEffect(() => {
@@ -57,33 +57,44 @@ export function AiResults({ data }: AiResultsProps) {
         <nav className="flex -mb-px">
           <button
             onClick={() => setActiveTab('summary')}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 text-sm font-medium ${
               activeTab === 'summary'
-                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/20'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/20'
             }`}
           >
             <FileText className="w-4 h-4" />
-            AI Summary
+            Summary
           </button>
           <button
             onClick={() => setActiveTab('mnemonics')}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 text-sm font-medium ${
               activeTab === 'mnemonics'
-                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/20'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/20'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
+            <Music className="w-4 h-4" />
             Mnemonics
+          </button>
+          <button
+            onClick={() => setActiveTab('sections')}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 text-sm font-medium ${
+              activeTab === 'sections'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/20'
+            }`}
+          >
+            <ListMusic className="w-4 h-4" />
+            Sections
           </button>
           {isPdf && (
             <button
               onClick={() => setActiveTab('verification')}
-              className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 border-b-2 text-sm font-medium ${
                 activeTab === 'verification'
-                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/20'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/20'
               }`}
             >
               <ScrollText className="w-4 h-4" />
@@ -134,6 +145,27 @@ export function AiResults({ data }: AiResultsProps) {
             ) : (
               <p className="text-gray-500 dark:text-gray-400">No mnemonics were generated.</p>
             )}
+          </div>
+        )}
+
+        {activeTab === 'sections' && (
+          <div className="space-y-4 animate-fade-in">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Section Labels</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {safeData.mnemonics
+                .map(mnemonic => mnemonic.pattern)
+                .filter((pattern, index, self) => pattern && self.indexOf(pattern) === index)
+                .sort()
+                .map((pattern, i) => (
+                  <div 
+                    key={i}
+                    className="p-4 bg-gray-50 dark:bg-gray-700 rounded-md shadow-sm border border-gray-100 dark:border-gray-600"
+                  >
+                    <span className="text-lg text-gray-800 dark:text-gray-200">{pattern}</span>
+                  </div>
+                ))
+              }
+            </div>
           </div>
         )}
 
