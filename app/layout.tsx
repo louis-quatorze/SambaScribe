@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from '@/components/ThemeProvider'
+import { ThemeProvider } from '../src/components/theme/ThemeProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-50`}>
+      <body className={`${inter.className} min-h-screen bg-white dark:bg-gray-900 dark:text-gray-50`}>
         <ThemeProvider defaultTheme="dark" storageKey="sambascribe-theme">
           {children}
         </ThemeProvider>
