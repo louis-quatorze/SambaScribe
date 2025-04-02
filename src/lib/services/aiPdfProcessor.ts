@@ -34,18 +34,16 @@ const PROMPT_TEMPLATES = {
   SUMMARY_REQUEST: `
 Focus on:
 - Musical instruments involved (such as surdo, repinique, caixa, tamborim, agogô, chocalho, etc.)
-- Structure and flow of the music (intro, main pattern, breaks, variations)
+- Structure and flow of the music
 - Time signature and tempo indications
 - Key rhythm patterns and their names if identifiable
 - Dynamics and performance instructions
-- Any special breaks or patterns (like butterfly break, ballerina break, entrada, paradiddle)
 
 Include the following types of information if present:
 - Names of specific rhythm patterns or breaks
 - Tempo markings
 - Dynamic markings (forte, piano, etc.)
 - Performance instructions
-- Section labels (intro, outro, break, ...)
 
 IMPORTANT: Format key instruments, patterns, or technical terms by wrapping them in double asterisks for emphasis (e.g., **surdo**, **tamborim**, **butterfly break**). This will make important terms stand out in the summary.`,
 
