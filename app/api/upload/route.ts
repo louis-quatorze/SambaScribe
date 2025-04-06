@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
+      console.log(`API: File size ${file.size} bytes exceeds limit of ${MAX_FILE_SIZE} bytes`);
       return NextResponse.json(
         { error: "File size exceeds 7MB limit" },
         { status: 400 }

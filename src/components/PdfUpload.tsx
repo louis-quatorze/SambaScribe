@@ -38,9 +38,12 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
     
     // Validate file size with more detailed message for PDFs
     if (file.size > MAX_FILE_SIZE) {
+      console.log(`File size check: ${file.size} exceeds limit ${MAX_FILE_SIZE}`);
       if (isPdf) {
+        console.log("Showing toast error for PDF size");
         toast.error("PDF size exceeds 7MB limit. For better results, try converting to text or reducing the PDF size.");
       } else {
+        console.log("Showing toast error for generic file size");
         toast.error("File size exceeds 7MB limit");
       }
       event.target.value = ""; // Clear the input
