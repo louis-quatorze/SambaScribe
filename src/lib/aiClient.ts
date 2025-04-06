@@ -166,6 +166,36 @@ export async function generateChatCompletion(
   additionalOptions: Partial<OpenAI.ChatCompletionCreateParamsNonStreaming> = {},
 ): Promise<string> {
   try {
+    console.log('\n=== AI REQUEST ===');
+    console.log('Model:', model);
+    
+    // More thoroughly filter out ALL PDF content from logs
+    const sanitizedMessages = messages.map(msg => ({
+      ...msg,
+      content: 
+        typeof msg.content === 'string' 
+          ? (
+              // Replace any base64 content or PDF mention
+              msg.content.includes('Base64 PDF content:') 
+                ? msg.content.replace(/Base64 PDF content:.*/, 'Base64 PDF content: [CONTENT_OMITTED]')
+              : msg.content.includes('JVBERi0') // Common PDF header in base64
+                ? msg.content.replace(/(JVBERi0[a-zA-Z0-9+/=]*)/g, '[PDF_BASE64_CONTENT_OMITTED]')
+              : msg.content
+            )
+          : msg.content
+    }));
+    console.log('Messages:', JSON.stringify(sanitizedMessages, null, 2));
+    console.log('Additional Options:', JSON.stringify(additionalOptions, null, 2));
+
+    // Calculate token estimates
+    const estimatedInputTokens = calculateTokens(messages);
+    console.log(`Estimated Input Tokens: ${estimatedInputTokens}`);
+
+    // Get max tokens from options or set defaults
+    const maxOutputTokens = additionalOptions.max_tokens || getDefaultMaxTokens(model);
+    console.log(`Max Output Tokens: ${maxOutputTokens}`);
+    console.log(`Max Total Tokens: ${estimatedInputTokens + maxOutputTokens}`);
+
     const modelId = AI_MODELS[model];
 
     // Handle Gemini models directly
@@ -175,6 +205,14 @@ export async function generateChatCompletion(
         model,
         false,
       );
+      console.log('\n=== AI RESPONSE ===');
+      console.log(geminiResp.text);
+      
+      // Estimate response tokens
+      const outputTokens = calculateTokens([{role: "assistant", content: geminiResp.text}]);
+      console.log(`Estimated Output Tokens Used: ${outputTokens}`);
+      console.log(`Total Tokens Used: ${estimatedInputTokens + outputTokens}`);
+      
       return geminiResp.text;
     }
 
@@ -183,10 +221,41 @@ export async function generateChatCompletion(
     const options: OpenAI.ChatCompletionCreateParamsNonStreaming = {
       model: modelId,
       messages,
+      temperature: 0.1, // Set fixed temperature as requested
+      top_p: 0.7, // Set top_p as requested
       ...additionalOptions,
     };
 
+    // Sanitize options for logging
+    const sanitizedOptions = {
+      ...options,
+      messages: options.messages.map(msg => ({
+        ...msg,
+        content: 
+          typeof msg.content === 'string' 
+            ? (
+                msg.content.includes('Base64 PDF content:') 
+                  ? msg.content.replace(/Base64 PDF content:.*/, 'Base64 PDF content: [CONTENT_OMITTED]')
+                : msg.content.includes('JVBERi0') // Common PDF header in base64
+                  ? msg.content.replace(/(JVBERi0[a-zA-Z0-9+/=]*)/g, '[PDF_BASE64_CONTENT_OMITTED]')
+                : msg.content
+              )
+            : msg.content
+      }))
+    };
+    console.log('Final Request Options:', JSON.stringify(sanitizedOptions, null, 2));
+
     const completion = await client.chat.completions.create(options);
+    
+    console.log('\n=== AI RESPONSE ===');
+    console.log(completion.choices[0]?.message?.content);
+    
+    // Log exact token usage reported by the API
+    console.log('\n=== TOKEN USAGE ===');
+    console.log(`Prompt Tokens: ${completion.usage?.prompt_tokens || 'Unknown'}`);
+    console.log(`Completion Tokens: ${completion.usage?.completion_tokens || 'Unknown'}`);
+    console.log(`Total Tokens: ${completion.usage?.total_tokens || 'Unknown'}`);
+    
     return completion.choices[0]?.message?.content ?? "";
   } catch (error) {
     console.error(
@@ -194,6 +263,48 @@ export async function generateChatCompletion(
       error,
     );
     throw error;
+  }
+}
+
+/**
+ * Estimate the number of tokens in a message
+ * This is a very rough estimate (4 chars ~= 1 token)
+ */
+function calculateTokens(messages: Array<{ role: string; content: string }>): number {
+  let total = 0;
+  for (const msg of messages) {
+    // Count overhead tokens for each message (roles, formatting)
+    total += 4;
+    
+    // Count content tokens (rough estimate)
+    if (typeof msg.content === 'string') {
+      total += Math.ceil(msg.content.length / 4);
+    }
+  }
+  return total;
+}
+
+/**
+ * Get default max tokens for different models
+ */
+function getDefaultMaxTokens(model: AIModel): number {
+  switch(model) {
+    case 'O1':
+      return 4096;
+    case 'SONNET':
+      return 4096;
+    case 'GPT_4O':
+      return 4096;
+    case 'GPT_4O_MINI':
+      return 4096;
+    case 'PERPLEXITY_SMALL':
+    case 'PERPLEXITY_LARGE':
+      return 1024;
+    case 'GEMINI_FLASH_WEB':
+    case 'GEMINI_FLASH_THINKING':
+      return 2048;
+    default:
+      return 1024;
   }
 }
 
@@ -224,7 +335,7 @@ export async function generateVisionAnalysis(
           content: `I'm working with a PDF samba music notation file named "${pdfFilename}". Based on this filename and the following prompt, please provide the best response you can: ${prompt}`
         }
       ],
-      max_tokens: 1024
+      max_tokens: 10240
     });
 
     return completion.choices[0]?.message?.content ?? "";

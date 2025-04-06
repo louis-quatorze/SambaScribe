@@ -118,13 +118,16 @@ Example:
   PDF_SUMMARY: (filename: string) => `
 ${PROMPT_TEMPLATES.FILE_INTRO('PDF', filename)} and encoded in base64.
 This file contains actual musical notation that you should analyze.
+
 Based on this file, provide a concise summary (under 100 words) of what this notation contains.
 
 ${PROMPT_TEMPLATES.SUMMARY_REQUEST}
 
 IMPORTANT: Include at least 3 specific elements or terms you found in the PDF (such as specific breaks, pattern names, or musical instructions). Put these terms in quotes AND format important terms by wrapping them in double asterisks (e.g., **"surdo"**, **"butterfly break"**) to highlight key terminology.
 
-Keep the summary informative and highlight the most important aspects of the notation for a samba drummer.`,
+Keep the summary informative and highlight the most important aspects of the notation for a samba drummer.
+
+`,
 
   TEXT_SUMMARY: (filename: string, content: string) => `
 ${PROMPT_TEMPLATES.FILE_INTRO('text file', filename)} and the following content:
