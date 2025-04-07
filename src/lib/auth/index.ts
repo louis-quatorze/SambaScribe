@@ -4,7 +4,6 @@ import {
   type DefaultSession,
 } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
 
 export enum UserRole {
   user = "user",
@@ -59,31 +58,10 @@ declare module "next-auth" {
 export const authOptions: NextAuthOptions = {
   // No adapter - use JWT only
   providers: [
-    // Removed EmailProvider as it requires an adapter
+    // Google OAuth provider
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    }),
-    // Add CredentialsProvider as a fallback for demo purposes
-    CredentialsProvider({
-      name: "Demo Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
-      },
-      async authorize(credentials) {
-        // This is a demo login - in a real app you would validate against a database
-        if (credentials?.email === "demo@example.com" && credentials?.password === "demo123") {
-          return { 
-            id: "demo-user-1",
-            name: "Demo User",
-            email: "demo@example.com",
-            role: UserRole.user,
-            isAdmin: false
-          };
-        }
-        return null;
-      }
     }),
   ],
   session: {
