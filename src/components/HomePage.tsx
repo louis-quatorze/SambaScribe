@@ -2,13 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import { PdfUpload } from "@/components/PdfUpload";
 import { AiResults } from "@/components/AiResults";
 import { SampleFiles } from "@/components/SampleFiles";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
-import { LogIn } from "lucide-react";
+import { LogIn, LogOut, User } from "lucide-react";
 
 export function HomePage() {
+  const { data: session, status } = useSession();
   const [aiResults, setAiResults] = useState<AiNotationData | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +47,15 @@ export function HomePage() {
     console.log("HomePage aiResults state:", aiResults);
   }, [aiResults]);
 
+  // Debug log for session status
+  useEffect(() => {
+    console.log("Auth session status:", status, session);
+  }, [status, session]);
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative bg-white dark:bg-gray-900">
       <header className="w-full flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
@@ -53,13 +64,32 @@ export function HomePage() {
             SambaScribe
           </h1>
         </Link>
-        <Link 
-          href="/auth/signin" 
-          className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-        >
-          <LogIn className="h-4 w-4" />
-          Sign In
-        </Link>
+
+        <div className="flex items-center gap-4">
+          {status === "authenticated" && session?.user ? (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <User className="h-4 w-4" />
+                <span>{session.user.name || session.user.email}</span>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link 
+              href="/auth/signin" 
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              <LogIn className="h-4 w-4" />
+              Sign In
+            </Link>
+          )}
+        </div>
       </header>
       
       <main className="flex-1 flex flex-col w-full mx-auto">

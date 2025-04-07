@@ -1,25 +1,15 @@
 "use client";
 
-import { ThemeProvider } from "next-themes";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { useEffect, useState } from "react";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { SessionProvider } from "next-auth/react";
+import { ReactNode } from "react";
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
+export function Providers({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      {children}
-      <ToastContainer position="top-center" />
-    </ThemeProvider>
+    <SessionProvider>
+      <ThemeProvider defaultTheme="dark" storageKey="sambascribe-theme">
+        {children}
+      </ThemeProvider>
+    </SessionProvider>
   );
 } 
