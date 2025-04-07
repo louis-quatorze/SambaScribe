@@ -3,7 +3,7 @@
 import React, { Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail, Key } from "lucide-react";
 import Link from "next/link";
 import { 
   GoogleButton, 
@@ -13,14 +13,35 @@ import {
 
 function SignInContent() {
   const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await signIn("email", { email, callbackUrl });
+    setError("");
+    
+    try {
+      const result = await signIn("credentials", { 
+        email, 
+        password,
+        redirect: false 
+      });
+      
+      if (result?.error) {
+        setError("Invalid email or password. Try 'demo@example.com' with password 'demo123'");
+        setIsLoading(false);
+      } else {
+        // Successful login, redirect
+        window.location.href = callbackUrl;
+      }
+    } catch (error) {
+      setError("An error occurred during sign in. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -59,6 +80,12 @@ function SignInContent() {
             <div className="flex-grow border-t border-neutral-300 dark:border-neutral-600"></div>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
@@ -82,13 +109,41 @@ function SignInContent() {
               </div>
             </div>
 
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              >
+                Password
+              </label>
+              <div className="mt-2">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-3 text-neutral-900 dark:text-white placeholder-neutral-500 dark:placeholder-neutral-400 shadow-sm dark:bg-neutral-800 focus:border-brandBlue-500 dark:focus:border-brandBlue-400 focus:ring-brandBlue-500 dark:focus:ring-brandBlue-400"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <div className="text-sm">
+              <p className="mt-2 text-neutral-500 dark:text-neutral-400">
+                Demo credentials: demo@example.com / demo123
+              </p>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
               className="group relative flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-brandBlue-500 to-brandBlue-600 px-4 py-3 text-white shadow-lg shadow-brandBlue-500/20 transition-all hover:from-brandBlue-600 hover:to-brandBlue-700 hover:shadow-xl hover:shadow-brandBlue-500/30 focus:outline-none focus:ring-2 focus:ring-brandBlue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Mail className="h-5 w-5" />
-              {isLoading ? "Sending link..." : "Sign in with Email"}
+              <Key className="h-5 w-5" />
+              {isLoading ? "Signing in..." : "Sign in with Credentials"}
             </button>
           </form>
 

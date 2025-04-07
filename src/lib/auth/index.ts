@@ -3,8 +3,8 @@ import {
   type NextAuthOptions,
   type DefaultSession,
 } from "next-auth";
-import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 export enum UserRole {
   user = "user",
@@ -59,31 +59,32 @@ declare module "next-auth" {
 export const authOptions: NextAuthOptions = {
   // No adapter - use JWT only
   providers: [
-    EmailProvider({
-      server: {
-        host: "smtp.resend.com",
-        port: 465,
-        auth: {
-          user: "resend",
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
-      },
-      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
-    }),
+    // Removed EmailProvider as it requires an adapter
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
-    // Microsoft provider commented out until we can resolve the import issue
-    // MicrosoftProvider({
-    //   clientId: process.env.MICROSOFT_CLIENT_ID || "",
-    //   clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
-    //   authorization: {
-    //     params: {
-    //       scope: "openid profile email",
-    //     },
-    //   },
-    // }),
+    // Add CredentialsProvider as a fallback for demo purposes
+    CredentialsProvider({
+      name: "Demo Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        // This is a demo login - in a real app you would validate against a database
+        if (credentials?.email === "demo@example.com" && credentials?.password === "demo123") {
+          return { 
+            id: "demo-user-1",
+            name: "Demo User",
+            email: "demo@example.com",
+            role: UserRole.user,
+            isAdmin: false
+          };
+        }
+        return null;
+      }
+    }),
   ],
   session: {
     strategy: "jwt", // Use JWT when no database is available
