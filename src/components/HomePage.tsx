@@ -68,6 +68,18 @@ export function HomePage() {
         <div className="flex items-center gap-4">
           {status === "authenticated" && session?.user ? (
             <div className="flex items-center gap-4">
+              <Link
+                href="/dashboard"
+                className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/pricing"
+                className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                Pricing
+              </Link>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                 <User className="h-4 w-4" />
                 <span>{session.user.name || session.user.email}</span>
@@ -81,13 +93,21 @@ export function HomePage() {
               </button>
             </div>
           ) : (
-            <Link 
-              href="/auth/signin" 
-              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-            >
-              <LogIn className="h-4 w-4" />
-              Sign In
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/pricing"
+                className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                Pricing
+              </Link>
+              <Link 
+                href="/auth/signin" 
+                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
+                <LogIn className="h-4 w-4" />
+                Sign In
+              </Link>
+            </div>
           )}
         </div>
       </header>

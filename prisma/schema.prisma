@@ -8,19 +8,24 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  name           String?
-  email          String?   @unique
-  emailVerified  DateTime?
-  image          String?
-  hashedPassword String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  login          String?
-  role           UserRole  @default(user)
-  isAdmin        Boolean   @default(false)
-  accounts       Account[]
-  sessions       Session[]
+  id                 String             @id @default(cuid())
+  name               String?
+  email              String?            @unique
+  emailVerified      DateTime?
+  image              String?
+  hashedPassword     String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  login              String?
+  role               UserRole           @default(user)
+  isAdmin            Boolean            @default(false)
+  hasPaidAccess      Boolean            @default(false)
+  subscriptionType   SubscriptionType?
+  subscriptionStatus SubscriptionStatus?
+  accounts           Account[]
+  sessions           Session[]
+  stripeCustomer     StripeCustomer?
+  subscriptions      Subscription[]
 }
 
 model Account {
@@ -53,6 +58,45 @@ model Session {
 enum UserRole {
   user
   admin
+}
+
+enum SubscriptionType {
+  free
+  individual
+  education
+}
+
+enum SubscriptionStatus {
+  active
+  past_due
+  canceled
+  incomplete
+  incomplete_expired
+  unpaid
+  trialing
+}
+
+model StripeCustomer {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  stripeCustomerId String  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String
+  stripeSubscriptionId String            @unique
+  status             SubscriptionStatus
+  subscriptionType   SubscriptionType
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Allowlist {

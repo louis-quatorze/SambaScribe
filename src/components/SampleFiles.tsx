@@ -141,6 +141,21 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
         Click on a sample to process it with AI
       </p>
+      
+      <div className="mt-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-lg p-4">
+        <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+          Want to analyze your own files?
+        </h3>
+        <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
+          Upgrade to our premium plan to upload and analyze your own samba notation files.
+        </p>
+        <a
+          href="/pricing"
+          className="inline-block w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
+        >
+          View Pricing Plans
+        </a>
+      </div>
     </div>
   );
 } 

@@ -77,6 +77,19 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
 
       if (!uploadResponse.ok) {
         const data = await uploadResponse.json();
+        
+        // Check if this is a premium feature access error
+        if (uploadResponse.status === 403 && data.message?.includes('premium')) {
+          toast.error("This feature requires a premium subscription");
+          
+          // Give a 2 second delay before redirecting to pricing
+          setTimeout(() => {
+            window.location.href = '/pricing';
+          }, 2000);
+          
+          throw new Error("Premium subscription required");
+        }
+        
         throw new Error(data.error || "Upload failed");
       }
 

@@ -38,6 +38,9 @@ declare module "next-auth" {
       isAdmin?: boolean;
       expires?: string;
       isTeamAdmin?: boolean;
+      hasPaidAccess?: boolean;
+      subscriptionType?: string;
+      subscriptionStatus?: string;
     };
     accessToken?: string;
   }
@@ -53,6 +56,20 @@ declare module "next-auth" {
     expires?: string;
     isTeamAdmin?: boolean;
     isAdmin?: boolean;
+    hasPaidAccess?: boolean;
+    subscriptionType?: string;
+    subscriptionStatus?: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: UserRole;
+    isAdmin?: boolean;
+    login?: string;
+    hasPaidAccess?: boolean;
+    subscriptionType?: string;
+    subscriptionStatus?: string;
   }
 }
 
@@ -112,6 +129,9 @@ export const authOptions: NextAuthOptions = {
             id: token.sub || "",
             role: token.role as UserRole || UserRole.user,
             isAdmin: token.isAdmin as boolean || false,
+            hasPaidAccess: token.hasPaidAccess as boolean || false,
+            subscriptionType: token.subscriptionType as string || undefined,
+            subscriptionStatus: token.subscriptionStatus as string || undefined,
           },
         };
       } catch (error) {
@@ -124,7 +144,39 @@ export const authOptions: NextAuthOptions = {
         // First time JWT is created
         token.role = user.role || UserRole.user;
         token.isAdmin = user.isAdmin || false;
+        token.hasPaidAccess = user.hasPaidAccess || false;
+        token.subscriptionType = user.subscriptionType;
+        token.subscriptionStatus = user.subscriptionStatus;
       }
+
+      // Check for subscription updates from the database on each token refresh
+      try {
+        // This is a simplified approach - in a real app, you would connect to your database
+        // and get the latest subscription status for the user
+        const userId = token.sub;
+        if (userId && typeof userId === 'string') {
+          // Here you would typically query your database for the latest subscription info
+          // For now, we'll keep the existing values
+          // Example:
+          // const user = await prisma.user.findUnique({
+          //   where: { id: userId },
+          //   select: { 
+          //     hasPaidAccess: true,
+          //     subscriptionType: true,
+          //     subscriptionStatus: true 
+          //   }
+          // });
+          // 
+          // if (user) {
+          //   token.hasPaidAccess = user.hasPaidAccess;
+          //   token.subscriptionType = user.subscriptionType;
+          //   token.subscriptionStatus = user.subscriptionStatus;
+          // }
+        }
+      } catch (error) {
+        console.error("Error refreshing subscription in JWT:", error);
+      }
+      
       return token;
     }
   },
