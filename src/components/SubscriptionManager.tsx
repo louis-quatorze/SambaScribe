@@ -138,7 +138,7 @@ export function SubscriptionManager() {
         <div className="flex-grow">
           <div className="flex justify-between items-start">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white capitalize">
-              {subscription.subscriptionType} Plan
+              {subscription.subscriptionType === 'individual' ? 'Premium' : subscription.subscriptionType} Plan
             </h3>
             <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${
               subscription.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :

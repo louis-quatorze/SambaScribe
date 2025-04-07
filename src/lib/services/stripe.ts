@@ -4,8 +4,7 @@ import { prisma } from '@/lib/db';
 // Define the subscription types and status enums
 export enum SubscriptionType {
   free = 'free',
-  individual = 'individual',
-  education = 'education'
+  individual = 'individual'
 }
 
 export enum SubscriptionStatus {
@@ -50,7 +49,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 // Price IDs for different subscription types
 const SUBSCRIPTION_PRICES = {
   individual: 'price_individual', // Replace with actual Stripe price IDs
-  education: 'price_education',
+};
+
+// Price IDs for one-time payments
+const ONE_TIME_PRICES = {
+  pdf_upload: 'price_pdf_upload', // Replace with actual Stripe price ID for one-time PDF upload
 };
 
 export async function createStripeCustomer(userId: string, email: string, name?: string) {
@@ -167,6 +170,64 @@ export async function createCustomerPortalSession(userId: string) {
   }
 }
 
+export async function createOneTimeCheckoutSession(userId: string, productType: string) {
+  try {
+    // Get or create customer
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        stripeCustomer: true
+      }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    let stripeCustomerId;
+
+    if (user.stripeCustomer) {
+      stripeCustomerId = user.stripeCustomer.stripeCustomerId;
+    } else if (user.email) {
+      const customer = await createStripeCustomer(userId, user.email, user.name || undefined);
+      stripeCustomerId = customer.stripeCustomerId;
+    } else {
+      throw new Error('User has no email address');
+    }
+
+    // Get price ID based on product type
+    const priceId = ONE_TIME_PRICES[productType.toLowerCase() as keyof typeof ONE_TIME_PRICES];
+    
+    if (!priceId) {
+      throw new Error(`Invalid product type: ${productType}`);
+    }
+
+    // Create checkout session for one-time payment
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'payment', // One-time payment mode
+      success_url: `${process.env.NEXTAUTH_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXTAUTH_URL}/payment/cancel`,
+      metadata: {
+        userId,
+        productType,
+      },
+    });
+
+    return session;
+  } catch (error) {
+    console.error('Error creating one-time checkout session:', error);
+    throw error;
+  }
+}
+
 // Update local database with subscription information from Stripe
 export async function updateSubscriptionInDatabase(
   stripeSubscriptionId: string,
@@ -236,11 +297,10 @@ export async function handleStripeWebhook(event: Stripe.Event) {
         const session = data.object as Stripe.Checkout.Session;
         
         if (session.mode === 'subscription' && session.metadata?.userId && session.subscription) {
-          // Cast the response to our custom type
+          // Handle subscription checkout
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string) as unknown as StripeSubscriptionData;
           const subscriptionType = session.metadata.subscriptionType;
           
-          // Get the timestamps using the Subscription data object structure
           const periodStart = new Date(subscription.current_period_start * 1000);
           const periodEnd = new Date(subscription.current_period_end * 1000);
           
@@ -253,6 +313,24 @@ export async function handleStripeWebhook(event: Stripe.Event) {
             periodEnd,
             subscription.cancel_at_period_end
           );
+        } else if (session.mode === 'payment' && session.metadata?.userId) {
+          // Handle one-time payment
+          // Grant user access to the specific paid feature
+          const userId = session.metadata.userId;
+          const productType = session.metadata.productType;
+          
+          if (productType === 'pdf_upload') {
+            // Update user to give them access to PDF upload feature
+            await prisma.user.update({
+              where: { id: userId },
+              data: { 
+                hasPaidAccess: true,
+              },
+            });
+          }
+          
+          // You could record the purchase in a separate table if needed
+          // This could be implemented later
         }
         break;
       }
@@ -261,7 +339,7 @@ export async function handleStripeWebhook(event: Stripe.Event) {
         
         if (invoice.subscription && invoice.customer) {
           // Cast the response to our custom type
-          const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string) as unknown as StripeSubscriptionData;
+          const subscription = await stripe.subscriptions.retrieve(invoice.subscription) as unknown as StripeSubscriptionData;
           
           // Find user by Stripe customer ID
           const customer = await prisma.stripeCustomer.findUnique({
@@ -270,7 +348,7 @@ export async function handleStripeWebhook(event: Stripe.Event) {
           
           if (customer) {
             // Cast the response to our custom type
-            const subscriptionData = await stripe.subscriptions.retrieve(invoice.subscription as string) as unknown as StripeSubscriptionData;
+            const subscriptionData = await stripe.subscriptions.retrieve(invoice.subscription) as unknown as StripeSubscriptionData;
             
             // Get the timestamps using the Subscription data object structure
             const periodStart = new Date(subscriptionData.current_period_start * 1000);
@@ -287,7 +365,7 @@ export async function handleStripeWebhook(event: Stripe.Event) {
               const product = await stripe.products.retrieve(productId);
               
               if (product.metadata.subscriptionType) {
-                subscriptionType = product.metadata.subscriptionType;
+                subscriptionType = product.metadata.subscriptionType as SubscriptionType;
               }
             }
             

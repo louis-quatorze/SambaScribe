@@ -153,7 +153,7 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
           href="/pricing"
           className="inline-block w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
         >
-          View Pricing Plans
+          View Premium Plan
         </a>
       </div>
     </div>

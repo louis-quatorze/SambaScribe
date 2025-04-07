@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Check, Loader2 } from 'lucide-react';
+import { OneTimePaymentCard } from '@/components/OneTimePaymentCard';
 
 export default function PricingPage() {
   const { data: session } = useSession();
@@ -29,6 +30,7 @@ export default function PricingPage() {
         },
         body: JSON.stringify({
           subscriptionType,
+          mode: 'subscription',
         }),
       });
 
@@ -65,209 +67,178 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-3 lg:gap-x-6">
-          {/* Free Plan */}
-          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Free</h2>
-              <p className="mt-4 text-gray-500 dark:text-gray-400">Basic features for casual users</p>
-              <p className="mt-8">
-                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$0</span>
-                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
-              </p>
-              <div className="mt-8">
-                <Link
-                  href="/"
-                  className="block w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-center text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                >
-                  Get Started for Free
-                </Link>
+        {/* Subscription Plans */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+            Subscription Plans
+          </h2>
+          <div className="grid gap-8 lg:grid-cols-2 lg:gap-x-10">
+            {/* Free Plan */}
+            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div className="p-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Free</h2>
+                <p className="mt-4 text-gray-500 dark:text-gray-400">Basic features for casual users</p>
+                <p className="mt-8">
+                  <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$0</span>
+                  <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
+                </p>
+                <div className="mt-8">
+                  <Link
+                    href="/"
+                    className="block w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-center text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  >
+                    Get Started for Free
+                  </Link>
+                </div>
+              </div>
+              <div className="px-6 pt-6 pb-8">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white tracking-wide uppercase">
+                  What's included
+                </h3>
+                <ul className="mt-6 space-y-4">
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Basic rhythm analysis
+                    </p>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Simple mnemonic generation
+                    </p>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Sample file analysis
+                    </p>
+                  </li>
+                </ul>
               </div>
             </div>
-            <div className="px-6 pt-6 pb-8">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white tracking-wide uppercase">
-                What's included
-              </h3>
-              <ul className="mt-6 space-y-4">
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Basic rhythm analysis
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Simple mnemonic generation
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Sample file analysis
-                  </p>
-                </li>
-              </ul>
+
+            {/* Individual Plan */}
+            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border-2 border-blue-500 dark:border-blue-400 relative">
+              <div className="absolute top-0 w-full bg-blue-500 text-white text-center py-1 text-sm font-medium">
+                Premium
+              </div>
+              <div className="p-6 pt-10">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Individual</h2>
+                <p className="mt-4 text-gray-500 dark:text-gray-400">Advanced features for dedicated percussionists</p>
+                <p className="mt-8">
+                  <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$9.99</span>
+                  <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
+                </p>
+                <div className="mt-8">
+                  <button
+                    onClick={() => handleSubscribe('individual')}
+                    disabled={isLoading === 'individual'}
+                    className="w-full py-2 px-4 rounded-md shadow-sm text-center text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
+                  >
+                    {isLoading === 'individual' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Subscribe Now'
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="px-6 pt-6 pb-8">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white tracking-wide uppercase">
+                  What's included
+                </h3>
+                <ul className="mt-6 space-y-4">
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Everything in Free
+                    </p>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Advanced rhythm analysis and pattern recognition
+                    </p>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Upload your own PDF sheets
+                    </p>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Advanced mnemonic customization
+                    </p>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Priority support
+                    </p>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Teaching materials and lesson tools
+                    </p>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    </div>
+                    <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
+                      Visual rhythm representations
+                    </p>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Individual Plan */}
-          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border-2 border-blue-500 dark:border-blue-400 relative">
-            <div className="absolute top-0 w-full bg-blue-500 text-white text-center py-1 text-sm font-medium">
-              Most Popular
-            </div>
-            <div className="p-6 pt-10">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Individual</h2>
-              <p className="mt-4 text-gray-500 dark:text-gray-400">Advanced features for dedicated percussionists</p>
-              <p className="mt-8">
-                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$9.99</span>
-                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
-              </p>
-              <div className="mt-8">
-                <button
-                  onClick={() => handleSubscribe('individual')}
-                  disabled={isLoading === 'individual'}
-                  className="w-full py-2 px-4 rounded-md shadow-sm text-center text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
-                >
-                  {isLoading === 'individual' ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Subscribe Now'
-                  )}
-                </button>
-              </div>
-            </div>
-            <div className="px-6 pt-6 pb-8">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white tracking-wide uppercase">
-                What's included
-              </h3>
-              <ul className="mt-6 space-y-4">
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Everything in Free
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Advanced rhythm analysis and pattern recognition
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Upload your own PDF sheets
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Advanced mnemonic customization
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Priority support
-                  </p>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Education Plan */}
-          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Education</h2>
-              <p className="mt-4 text-gray-500 dark:text-gray-400">Perfect for teachers and schools</p>
-              <p className="mt-8">
-                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$19.99</span>
-                <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
-              </p>
-              <div className="mt-8">
-                <button
-                  onClick={() => handleSubscribe('education')}
-                  disabled={isLoading === 'education'}
-                  className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-center text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 flex items-center justify-center"
-                >
-                  {isLoading === 'education' ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Subscribe Now'
-                  )}
-                </button>
-              </div>
-            </div>
-            <div className="px-6 pt-6 pb-8">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white tracking-wide uppercase">
-                What's included
-              </h3>
-              <ul className="mt-6 space-y-4">
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Everything in Individual
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Up to 10 student accounts
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Teaching materials and lesson plans
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Visual rhythm representations
-                  </p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                  </div>
-                  <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                    Dedicated education support
-                  </p>
-                </li>
-              </ul>
-            </div>
+        {/* One-time Payment Options */}
+        <div className="mt-24">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+            One-time Payment Options
+          </h2>
+          <div className="grid gap-8 lg:grid-cols-1 lg:gap-x-10 max-w-2xl mx-auto">
+            <OneTimePaymentCard
+              title="PDF Upload Access"
+              price="$4.99"
+              description="One-time payment for the ability to upload your own PDF sheet music"
+              productType="pdf_upload"
+              features={[
+                "Upload your own Samba notation PDF files",
+                "Get AI-generated mnemonics for your own sheets",
+                "Lifetime access to PDF upload feature",
+                "Works with standard Western notation",
+                "Unlimited number of uploads"
+              ]}
+            />
           </div>
         </div>
 
