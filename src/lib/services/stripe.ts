@@ -53,7 +53,7 @@ const SUBSCRIPTION_PRICES = {
 
 // Price IDs for one-time payments
 const ONE_TIME_PRICES = {
-  pdf_upload: 'price_pdf_upload', // Replace with actual Stripe price ID for one-time PDF upload
+  pdf_upload: 'price_1RBP2MFzhLUFKVrLsO4pmU6e', // Stripe price ID for one-time PDF upload
 };
 
 export async function createStripeCustomer(userId: string, email: string, name?: string) {
