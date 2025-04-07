@@ -320,10 +320,13 @@ async function generateAISummary(
       console.log('\nUser:', textPrompt);
       console.log('\n===================\n');
 
-      const result = await generateChatCompletion([
-        { role: "system", content: PROMPT_TEMPLATES.SYSTEM_SUMMARY },
-        { role: "user", content: `${textPrompt}\n\nBase64 PDF content: ${content.substring(0, 50000)}${content.length > 50000 ? '...' : ''}` }
-      ], 'GPT_4O_MINI');
+      const result = await generateChatCompletion({
+        model: 'GPT_4O_MINI',
+        messages: [
+          { role: "system", content: PROMPT_TEMPLATES.SYSTEM_SUMMARY },
+          { role: "user", content: `${textPrompt}\n\nBase64 PDF content: ${content.substring(0, 50000)}${content.length > 50000 ? '...' : ''}` }
+        ]
+      });
       console.log('PDF content-based summary generated successfully');
       return result.trim();
     } else {
@@ -334,10 +337,13 @@ async function generateAISummary(
       console.log('\nUser:', prompt);
       console.log('\n===================\n');
 
-      const result = await generateChatCompletion([
-        { role: "system", content: PROMPT_TEMPLATES.SYSTEM_SUMMARY },
-        { role: "user", content: prompt }
-      ], 'GPT_4O_MINI');
+      const result = await generateChatCompletion({
+        model: 'GPT_4O_MINI',
+        messages: [
+          { role: "system", content: PROMPT_TEMPLATES.SYSTEM_SUMMARY },
+          { role: "user", content: prompt }
+        ]
+      });
       console.log('AI summary generated successfully');
       return result.trim();
     }
@@ -367,10 +373,13 @@ async function generateAIMnemonics(
       console.log('\nUser:', pdfPrompt.replace(/PDF base64 content.*$/, 'PDF base64 content: [CONTENT_OMITTED]'));
       console.log('\n===================\n');
 
-      response = await generateChatCompletion([
-        { role: "system", content: PROMPT_TEMPLATES.SYSTEM_MNEMONICS },
-        { role: "user", content: pdfPrompt }
-      ], 'GPT_4O_MINI');
+      response = await generateChatCompletion({
+        model: 'GPT_4O_MINI',
+        messages: [
+          { role: "system", content: PROMPT_TEMPLATES.SYSTEM_MNEMONICS },
+          { role: "user", content: pdfPrompt }
+        ]
+      });
       
       console.log('Generated mnemonics using PDF content');
     } else {
@@ -381,10 +390,13 @@ async function generateAIMnemonics(
       console.log('\nUser:', prompt);
       console.log('\n===================\n');
 
-      response = await generateChatCompletion([
-        { role: "system", content: PROMPT_TEMPLATES.SYSTEM_MNEMONICS },
-        { role: "user", content: prompt }
-      ], 'GPT_4O_MINI');
+      response = await generateChatCompletion({
+        model: 'GPT_4O_MINI',
+        messages: [
+          { role: "system", content: PROMPT_TEMPLATES.SYSTEM_MNEMONICS },
+          { role: "user", content: prompt }
+        ]
+      });
     }
     
     // Process the response
