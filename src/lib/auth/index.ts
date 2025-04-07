@@ -44,6 +44,7 @@ declare module "next-auth" {
 
   export interface Profile {
     login: string;
+    email_verified?: boolean;
   }
 
   interface User {
@@ -69,13 +70,35 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account, profile }) {
       try {
-        const email = user?.email;
-        if (!email) return false;
+        // Basic validation
+        if (!user?.email) {
+          console.error("SignIn error: No email provided");
+          return false;
+        }
+
+        // Google OAuth specific checks
+        if (account?.provider === "google") {
+          if (!profile?.email_verified) {
+            console.error("SignIn error: Google email not verified");
+            return false;
+          }
+        }
+
+        // Additional validation can be added here
+        // For example, domain restrictions:
+        // const allowedDomains = ["example.com"];
+        // if (!allowedDomains.some(domain => user.email?.endsWith(domain))) {
+        //   console.error("SignIn error: Email domain not allowed");
+        //   return false;
+        // }
+
         return true;
       } catch (error) {
         console.error("SignIn callback error:", error);
+        // You can throw specific errors here to trigger the error page
+        // throw new Error("OAuthSignin");
         return false;
       }
     },

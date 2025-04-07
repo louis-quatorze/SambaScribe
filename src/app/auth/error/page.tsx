@@ -26,7 +26,25 @@ function ErrorContent() {
           </h1>
           <p className="mt-3 text-neutral-600 dark:text-neutral-300">
             {error === "AccessDenied"
-              ? "Access denied."
+              ? "Access denied. You don't have permission to access this application."
+              : error === "OAuthSignin"
+              ? "Error in OAuth sign in process. Please try again."
+              : error === "OAuthCallback"
+              ? "Error in OAuth callback. Please try again."
+              : error === "OAuthCreateAccount"
+              ? "Could not create OAuth account. Please try again."
+              : error === "EmailCreateAccount"
+              ? "Could not create email account. Please try again."
+              : error === "Callback"
+              ? "Error in callback. Please try again."
+              : error === "OAuthAccountNotLinked"
+              ? "Email already exists with different credentials. Please sign in with the original method."
+              : error === "EmailSignin"
+              ? "Check your email address."
+              : error === "CredentialsSignin"
+              ? "Sign in failed. Check the details you provided are correct."
+              : error === "SessionRequired"
+              ? "Please sign in to access this page."
               : "An error occurred during authentication. Please try again."}
           </p>
         </div>
