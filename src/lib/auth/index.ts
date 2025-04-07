@@ -1,5 +1,3 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "@/lib/db";
 import {
   getServerSession,
   type NextAuthOptions,
@@ -59,7 +57,7 @@ declare module "next-auth" {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // No adapter - use JWT only
   providers: [
     EmailProvider({
       server: {
@@ -88,7 +86,7 @@ export const authOptions: NextAuthOptions = {
     // }),
   ],
   session: {
-    strategy: "database",
+    strategy: "jwt", // Use JWT when no database is available
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
@@ -96,37 +94,22 @@ export const authOptions: NextAuthOptions = {
       try {
         const email = user?.email;
         if (!email) return false;
-
-        /*
-        // Enable this to restrict sign-ins to certain domains or allowlist
-        const domainCheck = ALLOWED_DOMAINS.some((d) => email.endsWith(d));
-        if (!domainCheck) {
-          const inAllowlist = await prisma.allowlist.findUnique({
-            where: { email },
-          });
-
-          if (!inAllowlist) {
-            return false;
-          }
-        }
-        */
-
         return true;
       } catch (error) {
         console.error("SignIn callback error:", error);
         return false;
       }
     },
-    async session({ session, user }) {
+    async session({ session, token }) {
       try {
+        // When using JWT strategy, user comes from token
         return {
           ...session,
           user: {
             ...session.user,
-            id: user.id,
-            role: user.role,
-            login: user.login,
-            isAdmin: user.isAdmin,
+            id: token.sub || "",
+            role: token.role as UserRole || UserRole.user,
+            isAdmin: token.isAdmin as boolean || false,
           },
         };
       } catch (error) {
@@ -134,6 +117,14 @@ export const authOptions: NextAuthOptions = {
         return session;
       }
     },
+    async jwt({ token, user }) {
+      if (user) {
+        // First time JWT is created
+        token.role = user.role || UserRole.user;
+        token.isAdmin = user.isAdmin || false;
+      }
+      return token;
+    }
   },
   pages: {
     signIn: "/auth/signin",
