@@ -41,6 +41,7 @@
 - Added middleware to restrict access to premium features for free users, redirecting them to pricing page when attempting to upload their own files.
 - Simplified subscription model by removing education tier, leaving only free and individual (premium) plans. Updated schema, service, and UI components to reflect the simplified model.
 - Implemented Stripe one-time payment functionality alongside existing subscription system, with support for PDF upload feature purchases.
+- Added Express-style Stripe checkout for simplified one-click payments with user association.
 
 # SambaScribe Updates
 
