@@ -6,6 +6,7 @@ import { PdfUpload } from "@/components/PdfUpload";
 import { AiResults } from "@/components/AiResults";
 import { SampleFiles } from "@/components/SampleFiles";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
+import { LogIn } from "lucide-react";
 
 export function HomePage() {
   const [aiResults, setAiResults] = useState<AiNotationData | null>(null);
@@ -46,14 +47,27 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col relative bg-white dark:bg-gray-900">
+      <header className="w-full flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
+        <Link href="/" className="block">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            SambaScribe
+          </h1>
+        </Link>
+        <Link 
+          href="/auth/signin" 
+          className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+        >
+          <LogIn className="h-4 w-4" />
+          Sign In
+        </Link>
+      </header>
+      
       <main className="flex-1 flex flex-col w-full mx-auto">
         <div className="flex-1 flex flex-col items-start justify-center">
           <section className="max-w-7xl w-full space-y-8 animate-fade-in p-4">
-            <Link href="/" className="block">
-              <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                SambaScribe - AI Samba Notation Guide
-              </h1>
-            </Link>
+            <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
+              AI Samba Notation Guide
+            </h2>
             <p className="text-center text-gray-600 dark:text-gray-400">
               Upload a samba notation file for AI-powered analysis and mnemonic generation
             </p>

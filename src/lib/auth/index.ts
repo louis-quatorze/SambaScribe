@@ -6,6 +6,7 @@ import {
   type DefaultSession,
 } from "next-auth";
 import EmailProvider from "next-auth/providers/email";
+import GoogleProvider from "next-auth/providers/google";
 
 export enum UserRole {
   user = "user",
@@ -71,6 +72,20 @@ export const authOptions: NextAuthOptions = {
       },
       from: process.env.EMAIL_FROM || "onboarding@resend.dev",
     }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
+    // Microsoft provider commented out until we can resolve the import issue
+    // MicrosoftProvider({
+    //   clientId: process.env.MICROSOFT_CLIENT_ID || "",
+    //   clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
+    //   authorization: {
+    //     params: {
+    //       scope: "openid profile email",
+    //     },
+    //   },
+    // }),
   ],
   session: {
     strategy: "database",

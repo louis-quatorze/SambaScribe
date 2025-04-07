@@ -5,6 +5,11 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
+import { 
+  GoogleButton, 
+  // MicrosoftButton, 
+  OAuthButtonsContainer 
+} from "@/components/auth/OAuthButtons";
 
 function SignInContent() {
   const [email, setEmail] = React.useState("");
@@ -36,11 +41,24 @@ function SignInContent() {
             </span>
           </h1>
           <p className="mt-3 text-neutral-600 dark:text-neutral-300">
-            Enter your email to sign in or create an account
+            Sign in or create an account
           </p>
         </div>
 
         <div className="rounded-2xl bg-white dark:bg-neutral-800/50 p-8 shadow-xl">
+          <OAuthButtonsContainer>
+            <GoogleButton />
+            {/* Microsoft OAuth temporarily disabled
+            <MicrosoftButton />
+            */}
+          </OAuthButtonsContainer>
+
+          <div className="my-6 flex items-center">
+            <div className="flex-grow border-t border-neutral-300 dark:border-neutral-600"></div>
+            <span className="mx-4 text-sm text-neutral-500 dark:text-neutral-400">or</span>
+            <div className="flex-grow border-t border-neutral-300 dark:border-neutral-600"></div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
