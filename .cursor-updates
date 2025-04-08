@@ -84,4 +84,6 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 
 - Simplified subscription model by removing education tier, leaving only free and individual (premium) plans. Updated schema, service, and UI components to reflect the simplified model.
 
+- Added Header component with hamburger menu for mobile navigation and hoverable username menu with sign out functionality, implementing consistent header across all pages.
+
  
