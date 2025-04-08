@@ -54,6 +54,7 @@ const SUBSCRIPTION_PRICES = {
 // Price IDs for one-time payments
 const ONE_TIME_PRICES = {
   pdf_upload: 'price_1RBP2MFzhLUFKVrLsO4pmU6e', // Stripe price ID for one-time PDF upload
+  premium_weekly: 'price_premium_weekly', // Stripe price ID for one-week premium access
 };
 
 export async function createStripeCustomer(userId: string, email: string, name?: string) {
@@ -346,6 +347,37 @@ export async function handleStripeWebhook(event: Stripe.Event) {
                 hasPaidAccess: true,
               },
             });
+          } else if (productType === 'premium_weekly') {
+            // Set premium access for one week
+            const now = new Date();
+            const oneWeekFromNow = new Date(now);
+            oneWeekFromNow.setDate(now.getDate() + 7);
+            
+            await prisma.user.update({
+              where: { id: userId },
+              data: { 
+                hasPaidAccess: true,
+                subscriptionStatus: SubscriptionStatus.active,
+                subscriptionType: SubscriptionType.individual,
+              },
+            });
+            
+            // Create a subscription record with an end date of one week from now
+            await prisma.subscription.create({
+              data: {
+                userId,
+                stripeSubscriptionId: `one_time_${session.id}`, // Use a unique ID
+                status: SubscriptionStatus.active,
+                subscriptionType: SubscriptionType.individual,
+                currentPeriodStart: now,
+                currentPeriodEnd: oneWeekFromNow,
+                cancelAtPeriodEnd: true,
+              },
+            });
+            
+            // Schedule a job to remove access after one week
+            // This could be done with a cron job or similar mechanism
+            console.log(`Premium access granted to ${userId} until ${oneWeekFromNow.toISOString()}`);
           }
           
           // You could record the purchase in a separate table if needed

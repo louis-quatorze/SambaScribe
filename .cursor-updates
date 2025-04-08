@@ -42,6 +42,7 @@
 - Simplified subscription model by removing education tier, leaving only free and individual (premium) plans. Updated schema, service, and UI components to reflect the simplified model.
 - Implemented Stripe one-time payment functionality alongside existing subscription system, with support for PDF upload feature purchases.
 - Added Express-style Stripe checkout for simplified one-click payments with user association.
+- Removed PDF Upload Access one-time payment option and related pages to simplify the pricing structure, focusing on the weekly premium subscription only.
 
 # SambaScribe Updates
 

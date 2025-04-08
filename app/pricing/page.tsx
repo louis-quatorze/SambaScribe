@@ -13,15 +13,15 @@ export default function PricingPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
-  const handleSubscribe = async (subscriptionType: string) => {
+  const handlePremiumPurchase = async () => {
     if (!session) {
-      toast.info('Please sign in to subscribe');
+      toast.info('Please sign in to continue');
       router.push('/auth/signin?callbackUrl=/pricing');
       return;
     }
 
     try {
-      setIsLoading(subscriptionType);
+      setIsLoading('premium');
       
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
@@ -29,8 +29,8 @@ export default function PricingPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          subscriptionType,
-          mode: 'subscription',
+          productType: 'premium_weekly',
+          mode: 'payment',
         }),
       });
 
@@ -48,8 +48,8 @@ export default function PricingPage() {
         throw new Error('No checkout URL provided');
       }
     } catch (error) {
-      console.error('Error subscribing:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to start subscription process');
+      console.error('Error processing payment:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to start payment process');
     } finally {
       setIsLoading(null);
     }
@@ -70,7 +70,7 @@ export default function PricingPage() {
         {/* Subscription Plans */}
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            Subscription Plans
+            Plans
           </h2>
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-x-10">
             {/* Free Plan */}
@@ -80,16 +80,8 @@ export default function PricingPage() {
                 <p className="mt-4 text-gray-500 dark:text-gray-400">Basic features for casual users</p>
                 <p className="mt-8">
                   <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$0</span>
-                  <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
+                  <span className="text-base font-medium text-gray-500 dark:text-gray-400"> forever</span>
                 </p>
-                <div className="mt-8">
-                  <Link
-                    href="/"
-                    className="block w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-center text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                  >
-                    Get Started for Free
-                  </Link>
-                </div>
               </div>
               <div className="px-6 pt-6 pb-8">
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white tracking-wide uppercase">
@@ -124,31 +116,34 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* Individual Plan */}
+            {/* Premium Plan */}
             <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border-2 border-blue-500 dark:border-blue-400 relative">
               <div className="absolute top-0 w-full bg-blue-500 text-white text-center py-1 text-sm font-medium">
                 Premium
               </div>
               <div className="p-6 pt-10">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Individual</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Premium</h2>
                 <p className="mt-4 text-gray-500 dark:text-gray-400">Advanced features for dedicated percussionists</p>
                 <p className="mt-8">
-                  <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$9.99</span>
-                  <span className="text-base font-medium text-gray-500 dark:text-gray-400">/month</span>
+                  <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$1.00</span>
+                  <span className="text-base font-medium text-gray-500 dark:text-gray-400"> one-time</span>
+                </p>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Valid for one week of premium access
                 </p>
                 <div className="mt-8">
                   <button
-                    onClick={() => handleSubscribe('individual')}
-                    disabled={isLoading === 'individual'}
+                    onClick={handlePremiumPurchase}
+                    disabled={isLoading === 'premium'}
                     className="w-full py-2 px-4 rounded-md shadow-sm text-center text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
                   >
-                    {isLoading === 'individual' ? (
+                    {isLoading === 'premium' ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Processing...
                       </>
                     ) : (
-                      'Subscribe Now'
+                      'Buy Now'
                     )}
                   </button>
                 </div>
@@ -217,28 +212,6 @@ export default function PricingPage() {
                 </ul>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* One-time Payment Options */}
-        <div className="mt-24">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            One-time Payment Options
-          </h2>
-          <div className="grid gap-8 lg:grid-cols-1 lg:gap-x-10 max-w-2xl mx-auto">
-            <OneTimePaymentCard
-              title="PDF Upload Access"
-              price="$4.99"
-              description="One-time payment for the ability to upload your own PDF sheet music"
-              productType="pdf_upload"
-              features={[
-                "Upload your own Samba notation PDF files",
-                "Get AI-generated mnemonics for your own sheets",
-                "Lifetime access to PDF upload feature",
-                "Works with standard Western notation",
-                "Unlimited number of uploads"
-              ]}
-            />
           </div>
         </div>
 
