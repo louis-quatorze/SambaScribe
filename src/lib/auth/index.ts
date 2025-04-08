@@ -151,27 +151,48 @@ export const authOptions: NextAuthOptions = {
 
       // Check for subscription updates from the database on each token refresh
       try {
-        // This is a simplified approach - in a real app, you would connect to your database
-        // and get the latest subscription status for the user
+        // Query the database for the latest subscription info
         const userId = token.sub;
         if (userId && typeof userId === 'string') {
-          // Here you would typically query your database for the latest subscription info
-          // For now, we'll keep the existing values
-          // Example:
-          // const user = await prisma.user.findUnique({
-          //   where: { id: userId },
-          //   select: { 
-          //     hasPaidAccess: true,
-          //     subscriptionType: true,
-          //     subscriptionStatus: true 
-          //   }
-          // });
-          // 
-          // if (user) {
-          //   token.hasPaidAccess = user.hasPaidAccess;
-          //   token.subscriptionType = user.subscriptionType;
-          //   token.subscriptionStatus = user.subscriptionStatus;
-          // }
+          // Import here to avoid circular dependencies
+          const { prisma } = await import('@/lib/db');
+          
+          // Find the user in the database with specific fields
+          const dbUser = await prisma.user.findUnique({
+            where: { id: userId }
+          });
+          
+          // Find active subscription
+          const subscription = await prisma.subscription.findFirst({
+            where: { 
+              userId: userId,
+              status: {
+                in: ['active', 'trialing'] 
+              }
+            },
+            orderBy: {
+              createdAt: 'desc'
+            }
+          });
+          
+          if (dbUser) {
+            // Update token with latest subscription info
+            token.hasPaidAccess = dbUser.hasPaidAccess;
+            token.subscriptionType = dbUser.subscriptionType || undefined;
+            token.subscriptionStatus = dbUser.subscriptionStatus || undefined;
+            
+            // If we have an active subscription but the user doesn't have paid access yet,
+            // update the token and fix the inconsistency
+            if (subscription && !dbUser.hasPaidAccess) {
+              token.hasPaidAccess = true;
+              
+              // Also fix the database inconsistency
+              await prisma.user.update({
+                where: { id: userId },
+                data: { hasPaidAccess: true }
+              });
+            }
+          }
         }
       } catch (error) {
         console.error("Error refreshing subscription in JWT:", error);

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, LogIn, LogOut, User, Home, Info, CreditCard } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, Home, Info, CreditCard, ChevronDown } from "lucide-react";
 
 export function Header() {
   const { data: session, status } = useSession();
@@ -28,6 +28,11 @@ export function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Toggle user menu on click
+  const toggleUserMenu = () => {
+    setUserMenuOpen(prev => !prev);
+  };
 
   return (
     <header className="w-full flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800 relative">
@@ -56,13 +61,17 @@ export function Header() {
             <div 
               className="relative" 
               ref={userMenuRef}
-              onMouseEnter={() => setUserMenuOpen(true)}
-              onMouseLeave={() => setUserMenuOpen(false)}
             >
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+              <button 
+                onClick={toggleUserMenu}
+                className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                aria-expanded={userMenuOpen}
+                aria-haspopup="true"
+              >
                 <User className="h-4 w-4" />
                 <span>{session.user.name || session.user.email}</span>
-              </div>
+                <ChevronDown className="h-4 w-4" />
+              </button>
               
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">

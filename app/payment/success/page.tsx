@@ -1,81 +1,144 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { Loader2, CheckCircle } from "lucide-react";
+import { useEffect, useState, Suspense } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { prisma } from '@/lib/db';
 
-function PaymentSuccessContent() {
-  const router = useRouter();
+// The component that uses useSearchParams must be wrapped in Suspense
+function SuccessContent() {
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isSuccess, setIsSuccess] = useState(false);
   const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(true);
-
+  const router = useRouter();
+  const { data: session, update: updateSession } = useSession();
+  
   useEffect(() => {
-    // Redirect to home after a delay
-    const timer = setTimeout(() => {
-      router.push("/dashboard");
-    }, 5000);
-
-    setIsLoading(false);
-
-    return () => clearTimeout(timer);
-  }, [router]);
-
+    const verifyPayment = async () => {
+      try {
+        const sessionId = searchParams.get('session_id');
+        if (!sessionId) {
+          setIsVerifying(false);
+          return;
+        }
+        
+        const response = await fetch(`/api/stripe/subscription?session_id=${sessionId}`);
+        if (!response.ok) {
+          throw new Error('Failed to verify payment');
+        }
+        
+        const data = await response.json();
+        setIsSuccess(data.success);
+        
+        // Even if the webhook hasn't processed yet, let's update the user's access rights
+        // so they can start using the premium features immediately
+        if (data.success && session?.user) {
+          // Try to directly update the user's paid access status
+          try {
+            const updateResponse = await fetch('/api/user/update-access', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ hasPaidAccess: true }),
+            });
+            
+            if (updateResponse.ok) {
+              // Refresh the session to update the UI
+              await updateSession();
+              console.log("User session updated with premium access");
+            }
+          } catch (error) {
+            console.error("Failed to update user access:", error);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to verify payment status');
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+    
+    verifyPayment();
+  }, [searchParams, session, updateSession]);
+  
+  if (isVerifying) {
+    return (
+      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow text-center">
+        <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Verifying payment...</h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Please wait while we verify your payment status.
+        </p>
+      </div>
+    );
+  }
+  
   return (
-    <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center">
-          <Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Processing your payment...
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Please wait while we confirm your payment.
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center">
-          <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Payment Successful!
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Thank you for your payment. You now have access to upload your own PDF files.
-          </p>
-          <div className="space-y-4 w-full">
-            <Link
-              href="/dashboard"
-              className="block w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors"
-            >
-              Go to Dashboard
-            </Link>
-            <Link
-              href="/pdf-upload"
-              className="block w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors"
-            >
-              Upload a PDF Now
-            </Link>
+    <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+      {isSuccess ? (
+        <>
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-        </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-4">
+            Payment Successful!
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+            Your one-time purchase was successful. You now have access to premium features.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-4">
+            Payment Verification Failed
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+            We couldn't verify your payment. If you believe this is an error, please contact customer support.
+          </p>
+        </>
       )}
+      
+      <div className="flex flex-col space-y-4">
+        <Link 
+          href="/"
+          className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Return to Home
+        </Link>
+        
+        <Link
+          href="/dashboard"
+          className="text-center text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          Go to dashboard
+        </Link>
+      </div>
     </div>
   );
 }
 
+// Loading fallback for Suspense
 function LoadingFallback() {
   return (
-    <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col items-center justify-center">
-      <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-      <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+    <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow text-center">
+      <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Loading...</h1>
     </div>
   );
 }
 
+// Main page component with Suspense wrapping
 export default function PaymentSuccessPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 p-4">
       <Suspense fallback={<LoadingFallback />}>
-        <PaymentSuccessContent />
+        <SuccessContent />
       </Suspense>
     </div>
   );

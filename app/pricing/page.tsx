@@ -169,47 +169,7 @@ export default function PricingPage() {
                         <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
                       </div>
                       <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                        Advanced rhythm analysis and pattern recognition
-                      </p>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                      </div>
-                      <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
                         Upload your own PDF sheets
-                      </p>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                      </div>
-                      <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                        Advanced mnemonic customization
-                      </p>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                      </div>
-                      <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                        Priority support
-                      </p>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                      </div>
-                      <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                        Teaching materials and lesson tools
-                      </p>
-                    </li>
-                    <li className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <Check className="h-5 w-5 text-green-500" aria-hidden="true" />
-                      </div>
-                      <p className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                        Visual rhythm representations
                       </p>
                     </li>
                   </ul>

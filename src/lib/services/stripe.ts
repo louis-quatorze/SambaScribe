@@ -339,45 +339,46 @@ export async function handleStripeWebhook(event: Stripe.Event) {
           const userId = session.metadata.userId;
           const productType = session.metadata.productType;
           
-          if (productType === 'pdf_upload') {
+          if (productType === 'pdf_upload' || productType === 'premium_weekly') {
             // Update user to give them access to PDF upload feature
+            console.log(`Setting hasPaidAccess=true for user ${userId}`);
             await prisma.user.update({
               where: { id: userId },
               data: { 
                 hasPaidAccess: true,
               },
             });
-          } else if (productType === 'premium_weekly') {
-            // Set premium access for one week
-            const now = new Date();
-            const oneWeekFromNow = new Date(now);
-            oneWeekFromNow.setDate(now.getDate() + 7);
             
-            await prisma.user.update({
-              where: { id: userId },
-              data: { 
-                hasPaidAccess: true,
-                subscriptionStatus: SubscriptionStatus.active,
-                subscriptionType: SubscriptionType.individual,
-              },
-            });
-            
-            // Create a subscription record with an end date of one week from now
-            await prisma.subscription.create({
-              data: {
-                userId,
-                stripeSubscriptionId: `one_time_${session.id}`, // Use a unique ID
-                status: SubscriptionStatus.active,
-                subscriptionType: SubscriptionType.individual,
-                currentPeriodStart: now,
-                currentPeriodEnd: oneWeekFromNow,
-                cancelAtPeriodEnd: true,
-              },
-            });
-            
-            // Schedule a job to remove access after one week
-            // This could be done with a cron job or similar mechanism
-            console.log(`Premium access granted to ${userId} until ${oneWeekFromNow.toISOString()}`);
+            if (productType === 'premium_weekly') {
+              // Set premium access for one week
+              const now = new Date();
+              const oneWeekFromNow = new Date(now);
+              oneWeekFromNow.setDate(now.getDate() + 7);
+              
+              // Update user subscription info
+              await prisma.user.update({
+                where: { id: userId },
+                data: { 
+                  subscriptionStatus: SubscriptionStatus.active,
+                  subscriptionType: SubscriptionType.individual,
+                },
+              });
+              
+              // Create a subscription record with an end date of one week from now
+              await prisma.subscription.create({
+                data: {
+                  userId,
+                  stripeSubscriptionId: `one_time_${session.id}`, // Use a unique ID
+                  status: SubscriptionStatus.active,
+                  subscriptionType: SubscriptionType.individual,
+                  currentPeriodStart: now,
+                  currentPeriodEnd: oneWeekFromNow,
+                  cancelAtPeriodEnd: true,
+                },
+              });
+              
+              console.log(`Premium access granted to ${userId} until ${oneWeekFromNow.toISOString()}`);
+            }
           }
           
           // You could record the purchase in a separate table if needed

@@ -88,4 +88,10 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 
 - Removed "Upload a File" button from the dashboard page and disabled PDF upload section for users without a premium subscription, displaying a locked premium feature notice with an upgrade button instead.
 
+- Updated username menu to use click-based menu instead of hover-based for better usability and to follow standard menu practices.
+
+- Simplified Premium plan features list to only include "Everything in Free" and "Upload your own PDF sheets".
+
+- Fixed subscription status not reflecting after payment by adding direct user access updates and enhanced webhook handling to ensure subscription status is correctly updated in the database.
+
  
