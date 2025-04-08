@@ -223,14 +223,6 @@ export default function PricingPage() {
             </a>{' '}
             for custom pricing options.
           </p>
-          
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Looking for a quicker checkout? Try our{' '}
-            <Link href="/express-checkout" className="font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300">
-              express checkout
-            </Link>{' '}
-            for a simple one-click payment process.
-          </p>
         </div>
       </div>
     </div>

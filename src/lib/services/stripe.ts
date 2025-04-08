@@ -54,7 +54,7 @@ const SUBSCRIPTION_PRICES = {
 // Price IDs for one-time payments
 const ONE_TIME_PRICES = {
   pdf_upload: 'price_1RBP2MFzhLUFKVrLsO4pmU6e', // Stripe price ID for one-time PDF upload
-  premium_weekly: 'price_premium_weekly', // Stripe price ID for one-week premium access
+  premium_weekly: 'price_1RBP2MFzhLUFKVrLsO4pmU6e', // Stripe price ID for one-week premium access
 };
 
 export async function createStripeCustomer(userId: string, email: string, name?: string) {

@@ -147,7 +147,7 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
           Want to analyze your own files?
         </h3>
         <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
-          Upgrade to our premium plan to upload and analyze your own samba notation files.
+          Upgrade to our premium plan to upload and analyze your own notation files.
         </p>
         <a
           href="/pricing"
