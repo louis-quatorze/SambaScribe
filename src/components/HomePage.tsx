@@ -7,11 +7,42 @@ import { AiResults } from "@/components/AiResults";
 import { SampleFiles } from "@/components/SampleFiles";
 import { Header } from "@/components/Header";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
+import { toast } from "react-toastify";
+import { LockIcon } from "lucide-react";
+import Link from "next/link";
 
 export function HomePage() {
   const { data: session, status } = useSession();
   const [aiResults, setAiResults] = useState<AiNotationData | null>(null);
+  const [hasSubscription, setHasSubscription] = useState<boolean>(false);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState<boolean>(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Fetch subscription status
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (status !== "authenticated" || !session?.user) return;
+      
+      try {
+        setIsCheckingSubscription(true);
+        const response = await fetch('/api/stripe/subscription');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch subscription data');
+        }
+        
+        const data = await response.json();
+        setHasSubscription(data.hasAccess);
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+        setHasSubscription(false);
+      } finally {
+        setIsCheckingSubscription(false);
+      }
+    };
+
+    checkSubscription();
+  }, [session, status]);
 
   const handleProcessComplete = (data: AiNotationData) => {
     console.log("HomePage received AI data:", data);
@@ -67,7 +98,23 @@ export function HomePage() {
             
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <PdfUpload onProcessComplete={handleProcessComplete} />
+                {hasSubscription || !session ? (
+                  <PdfUpload onProcessComplete={handleProcessComplete} />
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-800/30">
+                    <LockIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Premium Feature</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Uploading your own files requires a premium subscription
+                    </p>
+                    <Link 
+                      href="/pricing" 
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Upgrade to Premium
+                    </Link>
+                  </div>
+                )}
               </div>
               <div>
                 <SampleFiles onProcessComplete={handleProcessComplete} />

@@ -86,4 +86,6 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 
 - Added Header component with hamburger menu for mobile navigation and hoverable username menu with sign out functionality, implementing consistent header across all pages.
 
+- Removed "Upload a File" button from the dashboard page and disabled PDF upload section for users without a premium subscription, displaying a locked premium feature notice with an upgrade button instead.
+
  
