@@ -43,6 +43,7 @@
 - Implemented Stripe one-time payment functionality alongside existing subscription system, with support for PDF upload feature purchases.
 - Added Express-style Stripe checkout for simplified one-click payments with user association.
 - Removed PDF Upload Access one-time payment option and related pages to simplify the pricing structure, focusing on the weekly premium subscription only.
+- Fixed Stripe pricing error by updating premium_weekly price ID, removed reference to express checkout page, and removed "samba" from notation files text.
 
 # SambaScribe Updates
 
