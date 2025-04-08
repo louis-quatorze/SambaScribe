@@ -23,23 +23,49 @@ export async function POST(request: Request) {
     }
 
     const userId = session.user.id;
+    const userEmail = session.user.email;
+    const userName = session.user.name;
     
-    // Get or create the Stripe customer for this user
-    const user = await prisma.user.findUnique({
+    if (!userEmail) {
+      return new NextResponse("User email is required", { status: 400 });
+    }
+    
+    // Get or create the user in the database
+    let user = await prisma.user.findUnique({
       where: { id: userId },
       include: { stripeCustomer: true }
     });
 
+    // If user doesn't exist in the database but we have their info from the auth session
     if (!user) {
-      return new NextResponse("User not found", { status: 404 });
+      // Create the user in the database
+      try {
+        user = await prisma.user.create({
+          data: {
+            id: userId,
+            email: userEmail,
+            name: userName || null,
+            role: 'user',
+            isAdmin: false,
+            hasPaidAccess: false,
+          },
+          include: {
+            stripeCustomer: true
+          }
+        });
+        console.log(`Created new user in database: ${userId}`);
+      } catch (error) {
+        console.error("Error creating user in database:", error);
+        return new NextResponse("Failed to create user in database", { status: 500 });
+      }
     }
 
     // Get or create Stripe customer
     let stripeCustomerId;
-    if (user.stripeCustomer) {
+    if (user?.stripeCustomer) {
       stripeCustomerId = user.stripeCustomer.stripeCustomerId;
-    } else if (user.email) {
-      const customer = await createStripeCustomer(userId, user.email, user.name || undefined);
+    } else if (userEmail) {
+      const customer = await createStripeCustomer(userId, userEmail, userName || undefined);
       stripeCustomerId = customer.stripeCustomerId;
     } else {
       return new NextResponse("User has no email address", { status: 400 });

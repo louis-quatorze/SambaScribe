@@ -170,18 +170,37 @@ export async function createCustomerPortalSession(userId: string) {
   }
 }
 
-export async function createOneTimeCheckoutSession(userId: string, productType: string) {
+export async function createOneTimeCheckoutSession(userId: string, productType: string, userEmail?: string, userName?: string) {
   try {
     // Get or create customer
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         stripeCustomer: true
       }
     });
 
+    // If user doesn't exist in the database but we have their info from the auth session
+    if (!user && userEmail) {
+      // Create the user in the database
+      user = await prisma.user.create({
+        data: {
+          id: userId,
+          email: userEmail,
+          name: userName || null,
+          role: 'user',
+          isAdmin: false,
+          hasPaidAccess: false,
+        },
+        include: {
+          stripeCustomer: true
+        }
+      });
+      console.log(`Created new user in database: ${userId}`);
+    }
+
     if (!user) {
-      throw new Error('User not found');
+      throw new Error('User not found and could not be created');
     }
 
     let stripeCustomerId;

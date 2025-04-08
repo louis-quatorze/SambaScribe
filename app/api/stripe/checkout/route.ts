@@ -19,6 +19,13 @@ export async function POST(request: Request) {
     }
 
     const userId = session.user.id;
+    const userEmail = session.user.email || undefined;
+    const userName = session.user.name || undefined;
+    
+    if (mode === 'payment' && !userEmail) {
+      return new NextResponse("User email is required for payment", { status: 400 });
+    }
+    
     let checkoutSession;
 
     if (mode === 'subscription') {
@@ -30,7 +37,7 @@ export async function POST(request: Request) {
       if (!productType) {
         return new NextResponse("Product type is required", { status: 400 });
       }
-      checkoutSession = await createOneTimeCheckoutSession(userId, productType);
+      checkoutSession = await createOneTimeCheckoutSession(userId, productType, userEmail, userName);
     } else {
       return new NextResponse("Invalid payment mode", { status: 400 });
     }
