@@ -52,9 +52,9 @@ function SuccessContent() {
         
         // Even if the webhook hasn't processed yet, let's update the user's access rights
         // so they can start using the premium features immediately
-        if (data.success && session?.user) {
-          // Try to directly update the user's paid access status
+        if (session?.user) {
           try {
+            // First update the user's access in the database
             const updateResponse = await fetch('/api/user/update-access', {
               method: 'POST',
               headers: {
@@ -63,13 +63,27 @@ function SuccessContent() {
               body: JSON.stringify({ hasPaidAccess: true }),
             });
             
-            if (updateResponse.ok) {
-              // Refresh the session to update the UI
-              await updateSession();
-              console.log("User session updated with premium access");
+            if (!updateResponse.ok) {
+              throw new Error('Failed to update user access');
             }
+
+            // Force a session refresh to update the UI
+            await updateSession();
+            
+            // Double-check the session was updated
+            const statusResponse = await fetch('/api/user/status');
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              if (!statusData.hasPaidAccess) {
+                // If still not updated, try one more session refresh
+                await updateSession();
+              }
+            }
+            
+            console.log("User session updated with premium access");
           } catch (error) {
             console.error("Failed to update user access:", error);
+            toast.error("Your payment was successful, but there was an issue updating your access. Please try refreshing the page.");
           }
         }
       } catch (error) {

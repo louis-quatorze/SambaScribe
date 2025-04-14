@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { prisma } from '@/lib/db';
 
 export async function middleware(request: NextRequest) {
   // Get the pathname of the request
@@ -29,11 +30,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Check if the user has paid access
+  // Check both token and database state for paid access
   const hasPaidAccess = token.hasPaidAccess === true;
+  
+  // If token shows no access, double check the database
+  if (!hasPaidAccess && token.sub) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: token.sub },
+        select: { hasPaidAccess: true }
+      });
+      
+      if (user?.hasPaidAccess) {
+        // User has access in database but not in token, allow the request
+        return NextResponse.next();
+      }
+    } catch (error) {
+      console.error('Error checking user access in middleware:', error);
+    }
+  }
 
-  // If it's a premium route but user doesn't have paid access, redirect to pricing page
-  if (isPremiumRoute && !hasPaidAccess) {
+  // If neither token nor database show paid access, handle accordingly
+  if (!hasPaidAccess) {
     // Handle differently based on request type (API vs page)
     if (path.startsWith('/api/')) {
       // For API requests, return a JSON response with an error
