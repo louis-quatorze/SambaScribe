@@ -32,14 +32,26 @@ export async function GET() {
       },
     });
 
+    // Get the user's paid access status
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { hasPaidAccess: true }
+    });
+
     if (!subscription) {
-      return NextResponse.json(null);
+      return NextResponse.json({
+        subscription: null,
+        hasAccess: user?.hasPaidAccess || false
+      });
     }
 
     return NextResponse.json({
-      ...subscription,
-      currentPeriodStart: subscription.currentPeriodStart.toISOString(),
-      currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
+      subscription: {
+        ...subscription,
+        currentPeriodStart: subscription.currentPeriodStart.toISOString(),
+        currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
+      },
+      hasAccess: user?.hasPaidAccess || false
     });
   } catch (error) {
     console.error("Error getting subscription:", error);

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-toastify';
 import { Loader2, CreditCard, RefreshCw, AlertCircle } from 'lucide-react';
+import { refreshSession } from '@/lib/utils/session';
 
 interface Subscription {
   id: string;
@@ -13,6 +14,11 @@ interface Subscription {
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
   stripeSubscriptionId: string;
+}
+
+interface SubscriptionResponse {
+  subscription: Subscription | null;
+  hasAccess: boolean;
 }
 
 export function SubscriptionManager() {
@@ -35,7 +41,13 @@ export function SubscriptionManager() {
           throw new Error('Failed to fetch subscription data');
         }
         
-        const data = await response.json();
+        const data: SubscriptionResponse = await response.json();
+        
+        // If subscription status has changed, refresh the session
+        if (data?.subscription?.status !== session.user.subscriptionStatus) {
+          await refreshSession();
+        }
+        
         setSubscription(data.subscription);
         setHasAccess(data.hasAccess);
       } catch (error) {
@@ -113,17 +125,22 @@ export function SubscriptionManager() {
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">No active subscription</h3>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              You're currently on the free plan with limited features.
+              {hasAccess 
+                ? "You have access to premium features through a one-time purchase."
+                : "You're currently on the free plan with limited features."
+              }
             </p>
           </div>
         </div>
         
-        <button
-          onClick={handleSubscribe}
-          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Upgrade to Premium
-        </button>
+        {!hasAccess && (
+          <button
+            onClick={handleSubscribe}
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Upgrade to Premium
+          </button>
+        )}
       </div>
     );
   }
@@ -155,7 +172,7 @@ export function SubscriptionManager() {
               ? subscription.stripeSubscriptionId.startsWith('one_time_')
                 ? `One-time premium access valid until ${formatDate(subscription.currentPeriodEnd)}`
                 : `Your subscription will end on ${formatDate(subscription.currentPeriodEnd)}`
-            : `Next billing date: ${formatDate(subscription.currentPeriodEnd)}`
+              : `Next billing date: ${formatDate(subscription.currentPeriodEnd)}`
             }
           </p>
           

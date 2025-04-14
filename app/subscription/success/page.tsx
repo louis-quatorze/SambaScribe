@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { Check, ArrowLeft, Loader2 } from "lucide-react";
+import { refreshSession } from "@/lib/utils/session";
 
 function SubscriptionSuccessContent() {
   const router = useRouter();
@@ -25,10 +26,10 @@ function SubscriptionSuccessContent() {
         // Wait for a moment to ensure the webhook has processed
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // In a real implementation, you might want to verify the subscription status
-        // by making an API call to your backend
+        // Refresh the session to get the updated subscription status
+        await refreshSession();
         
-        toast.success("Subscription completed successfully");
+        toast.success("Subscription activated successfully");
       } catch (error) {
         console.error("Error verifying subscription:", error);
         toast.error("Failed to verify subscription");
@@ -59,7 +60,7 @@ function SubscriptionSuccessContent() {
           <div className="flex flex-col items-center justify-center mt-6">
             <div className="w-8 h-8 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Finalizing your subscription...
+              Activating your subscription...
             </p>
           </div>
         ) : (
@@ -87,9 +88,9 @@ function SubscriptionSuccessContent() {
 
 function LoadingFallback() {
   return (
-    <div className="w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col items-center justify-center">
-      <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-      <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+    <div className="flex flex-col items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      <p className="mt-2 text-gray-600 dark:text-gray-400">Loading...</p>
     </div>
   );
 }

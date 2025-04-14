@@ -5,10 +5,10 @@ import { existsSync } from 'fs';
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
-  region: process.env.AWS_S3_REGION,
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
 
@@ -210,22 +210,22 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
 
     // Log S3 configuration
     console.log('S3 Configuration:', {
-      region: process.env.AWS_S3_REGION,
-      bucket: process.env.AWS_S3_BUCKET_NAME,
-      hasAccessKey: !!process.env.AWS_S3_ACCESS_KEY_ID,
-      hasSecretKey: !!process.env.AWS_S3_SECRET_ACCESS_KEY
+      region: process.env.AWS_REGION,
+      bucket: process.env.BUCKET_NAME,
+      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
     });
 
     const s3Key = `samples/${filename}`;
     console.log('Attempting to fetch S3 file:', {
-      bucket: process.env.AWS_S3_BUCKET_NAME,
+      bucket: process.env.BUCKET_NAME,
       key: s3Key,
-      expectedUrl: `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${s3Key}`
+      expectedUrl: `https://${process.env.BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`
     });
 
     // Get the file from S3
     const command = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME!,
+      Bucket: process.env.BUCKET_NAME!,
       Key: s3Key,
     });
 
