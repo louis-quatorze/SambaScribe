@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { prisma } from '@/lib/db';
 
 export async function middleware(request: NextRequest) {
   // Get the pathname of the request
@@ -29,34 +30,42 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Check if the user has paid access
-  const hasPaidAccess = token.hasPaidAccess === true;
+  // Check if the user has paid access in the database
+  const userId = token.sub;
+  if (userId) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { hasPaidAccess: true }
+      });
 
-  // If it's a premium route but user doesn't have paid access, redirect to pricing page
-  if (isPremiumRoute && !hasPaidAccess) {
-    // Handle differently based on request type (API vs page)
-    if (path.startsWith('/api/')) {
-      // For API requests, return a JSON response with an error
-      return new NextResponse(
-        JSON.stringify({
-          success: false,
-          message: 'This feature requires a premium subscription',
-        }),
-        {
-          status: 403,
-          headers: {
-            'content-type': 'application/json',
-          },
-        }
-      );
-    } else {
-      // For page requests, redirect to pricing page
-      return NextResponse.redirect(new URL('/pricing', request.url));
+      // If user has paid access in the database but not in the token,
+      // we'll still allow them through and let the session update handle it
+      if (user?.hasPaidAccess) {
+        return NextResponse.next();
+      }
+    } catch (error) {
+      console.error('Error checking user paid access:', error);
     }
   }
 
-  // Allow the request to proceed
-  return NextResponse.next();
+  // If no paid access in token or database, return error or redirect
+  if (path.startsWith('/api/')) {
+    return new NextResponse(
+      JSON.stringify({
+        success: false,
+        message: 'This feature requires a premium subscription',
+      }),
+      {
+        status: 403,
+        headers: {
+          'content-type': 'application/json',
+        },
+      }
+    );
+  } else {
+    return NextResponse.redirect(new URL('/pricing', request.url));
+  }
 }
 
 // Configure which paths should be handled by this middleware

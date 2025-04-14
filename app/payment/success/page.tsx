@@ -1,80 +1,85 @@
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { Loader2, Check } from 'lucide-react';
+import Link from 'next/link';
 
-// The component that uses useSearchParams must be wrapped in Suspense
 function SuccessContent() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { data: session, update: updateSession } = useSession();
-  
+  const router = useRouter();
+
   useEffect(() => {
     const verifyPayment = async () => {
+      const sessionId = searchParams?.get('session_id');
+      if (!sessionId) {
+        toast.error('No session ID found');
+        setIsVerifying(false);
+        return;
+      }
+
       try {
-        const sessionId = searchParams.get('session_id');
-        
-        // First check if the user already has access (webhook might have already processed)
-        if (session?.user) {
-          // Check user's subscription status directly
-          const userStatusResponse = await fetch('/api/user/status');
-          if (userStatusResponse.ok) {
-            const userData = await userStatusResponse.json();
-            if (userData.hasPaidAccess) {
-              // User already has access, no need for further verification
-              setIsSuccess(true);
-              setIsVerifying(false);
-              return;
-            }
-          }
-        }
-        
-        // If no session ID or couldn't verify user status, and user doesn't have access yet
-        if (!sessionId) {
-          setIsVerifying(false);
-          return;
-        }
-        
-        // Try to verify through the session ID
+        // First verify the payment with Stripe
         const response = await fetch(`/api/stripe/subscription?session_id=${sessionId}`);
-        if (!response.ok) {
-          throw new Error('Failed to verify payment');
-        }
-        
         const data = await response.json();
-        setIsSuccess(data.success);
-        
-        // Even if the webhook hasn't processed yet, let's update the user's access rights
-        // so they can start using the premium features immediately
-        if (data.success && session?.user) {
-          // Try to directly update the user's paid access status
-          try {
-            const updateResponse = await fetch('/api/user/update-access', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ hasPaidAccess: true }),
-            });
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to verify payment status');
+        }
+
+        if (data.success && data.hasAccess) {
+          setIsSuccess(true);
+          
+          // Force a session refresh to update the premium status
+          await updateSession();
+          
+          // Double check the session was updated
+          if (!session?.user?.hasPaidAccess && retryCount < 3) {
+            console.log("Session not updated yet, retrying...", { retryCount });
             
-            if (updateResponse.ok) {
-              // Refresh the session to update the UI
+            // Wait a moment and try again
+            setTimeout(async () => {
+              setRetryCount(prev => prev + 1);
               await updateSession();
-              console.log("User session updated with premium access");
-            }
-          } catch (error) {
-            console.error("Failed to update user access:", error);
+              
+              // If still not updated after retry, try the direct update
+              if (!session?.user?.hasPaidAccess) {
+                try {
+                  const updateResponse = await fetch('/api/user/update-access', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ hasPaidAccess: true }),
+                  });
+                  
+                  if (updateResponse.ok) {
+                    await updateSession();
+                    console.log("User access updated via fallback");
+                  }
+                } catch (updateError) {
+                  console.error("Failed to update user access:", updateError);
+                }
+              }
+            }, 2000);
+          } else if (session?.user?.hasPaidAccess) {
+            // Success! Redirect to home after a short delay
+            setTimeout(() => {
+              router.push('/');
+            }, 2000);
           }
+        } else {
+          throw new Error(data.message || 'Payment verification failed');
         }
       } catch (error) {
-        console.error(error);
-        toast.error('Failed to verify payment status');
+        console.error('Verification error:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to verify payment status');
         
         // Even if verification fails, check if the user has access in their session
         if (session?.user?.hasPaidAccess) {
@@ -84,10 +89,10 @@ function SuccessContent() {
         setIsVerifying(false);
       }
     };
-    
+
     verifyPayment();
-  }, [searchParams, session, updateSession]);
-  
+  }, [searchParams, session, updateSession, retryCount, router]);
+
   if (isVerifying) {
     return (
       <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow text-center">
@@ -99,69 +104,47 @@ function SuccessContent() {
       </div>
     );
   }
-  
+
   return (
-    <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow text-center">
       {isSuccess ? (
         <>
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Payment Successful!
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Your one-time purchase was successful. You now have access to premium features.
+            Redirecting you to the home page...
           </p>
         </>
       ) : (
         <>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-4">
-            Payment Verification
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Payment Verification Failed
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
-            If you've already made a payment, please check your dashboard to access premium features. It may take a few moments for your payment to be processed.
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            We couldn't verify your payment status. If you believe this is an error,
+            please contact support with your session ID: {searchParams?.get('session_id')}
           </p>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Return to Pricing
+          </Link>
         </>
       )}
-      
-      <div className="flex flex-col space-y-4">
-        <Link 
-          href="/"
-          className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Return to Home
-        </Link>
-        
-        <Link
-          href="/dashboard"
-          className="text-center text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          Go to dashboard
-        </Link>
-      </div>
     </div>
   );
 }
 
-// Loading fallback for Suspense
-function LoadingFallback() {
+export default function SuccessPage() {
   return (
-    <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow text-center">
-      <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Loading...</h1>
-    </div>
-  );
-}
-
-// Main page component with Suspense wrapping
-export default function PaymentSuccessPage() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 p-4">
-      <Suspense fallback={<LoadingFallback />}>
-        <SuccessContent />
-      </Suspense>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
+      <SuccessContent />
     </div>
   );
 } 

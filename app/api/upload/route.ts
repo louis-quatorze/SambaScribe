@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import { join } from "path";
-import { mkdir } from "fs/promises";
+import { uploadFile } from "@/lib/storage";
 
 const MAX_FILE_SIZE = 7 * 1024 * 1024; // 7MB in bytes - matching client-side limit
 
@@ -40,24 +38,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadDir = join(process.cwd(), "uploads");
-    await mkdir(uploadDir, { recursive: true });
-
-    // Generate a unique filename
-    const uniqueFilename = `${Date.now()}-${file.name}`;
-    const filePath = join(uploadDir, uniqueFilename);
-
-    // Convert File to Buffer and write to filesystem
+    // Convert File to Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    await writeFile(filePath, buffer);
+    // Generate a unique filename
+    const uniqueFilename = `${Date.now()}-${file.name}`;
+    
+    // Upload to S3
+    const fileUrl = await uploadFile(uniqueFilename, buffer);
 
     return NextResponse.json({ 
       success: true,
-      filename: uniqueFilename
+      filename: uniqueFilename,
+      url: fileUrl
     });
+
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
