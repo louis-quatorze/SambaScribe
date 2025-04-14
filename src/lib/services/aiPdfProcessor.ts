@@ -2,6 +2,15 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { generateChatCompletion, generateVisionAnalysis } from '@/lib/aiClient';
 import { existsSync } from 'fs';
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+
+const s3 = new S3Client({
+  region: process.env.AWS_S3_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY!,
+  },
+});
 
 export interface AiNotationData {
   filename: string;
@@ -199,13 +208,39 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
       throw new Error('Invalid filename provided');
     }
 
-    // Read the file path
-    const filePath = join(process.cwd(), 'uploads', filename);
+    // Log S3 configuration
+    console.log('S3 Configuration:', {
+      region: process.env.AWS_S3_REGION,
+      bucket: process.env.AWS_S3_BUCKET_NAME,
+      hasAccessKey: !!process.env.AWS_S3_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.AWS_S3_SECRET_ACCESS_KEY
+    });
+
+    const s3Key = `samples/${filename}`;
+    console.log('Attempting to fetch S3 file:', {
+      bucket: process.env.AWS_S3_BUCKET_NAME,
+      key: s3Key,
+      expectedUrl: `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${s3Key}`
+    });
+
+    // Get the file from S3
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET_NAME!,
+      Key: s3Key,
+    });
+
+    const response = await s3.send(command);
     
-    // Check if file exists
-    if (!existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
+    if (!response.Body) {
+      throw new Error(`File not found: samples/${filename}`);
     }
+
+    // Convert the readable stream to a buffer
+    const chunks = [];
+    for await (const chunk of response.Body as any) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
     
     // Determine file type
     const isPdf = filename.toLowerCase().endsWith('.pdf');
@@ -214,16 +249,14 @@ export async function aiProcessFile(filename: string): Promise<AiNotationData> {
     let fileContent = '';
     let pdfBase64 = '';
     
-    // Read the file differently based on type
     if (isPdf) {
-      // For PDFs, read as binary and convert to base64
-      const dataBuffer = await readFile(filePath);
-      pdfBase64 = dataBuffer.toString('base64');
+      // For PDFs, convert to base64
+      pdfBase64 = buffer.toString('base64');
       fileContent = `PDF file: ${filename} (binary content)`;
       console.log(`PDF file read successfully: ${filename}, size: ${pdfBase64.length} characters (base64)`);
     } else {
-      // For text files, read as UTF-8
-      fileContent = await readFile(filePath, 'utf-8');
+      // For text files, convert to UTF-8
+      fileContent = buffer.toString('utf-8');
       console.log(`Text file read successfully: ${filename}, size: ${fileContent.length} characters`);
     }
     

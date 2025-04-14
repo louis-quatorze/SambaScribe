@@ -95,13 +95,8 @@ export function PdfUpload({ onFileSelect, onProcessComplete }: PdfUploadProps) {
 
       const uploadData = await uploadResponse.json();
       
-      if (!uploadData.url) {
-        throw new Error("No file URL received from server");
-      }
-
       if (onFileSelect) {
-        // Pass both the file and the URL to the callback
-        onFileSelect(Object.assign(file, { url: uploadData.url }));
+        onFileSelect(file);
       }
       
       // Short delay to show upload complete

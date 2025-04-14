@@ -23,17 +23,17 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
     {
       id: "aainjaa",
       title: "Aainjaa",
-      filename: "1743300481733-Aainjaa-Terceira.pdf"
+      filename: "Aainjaa.pdf"
     },    
     {
         id: "bossa2",
         title: "Mangueira",
-        filename: "1743300266823-Bossa 2-Terceira.pdf"
+        filename: "Mangueira.pdf"
     },
     {
       id: "sambaDaMusa",
       title: "Samba Da Musa",
-      filename: "1743386561529-Samba Da Musa-Terceira.pdf"
+      filename: "Samba-Da-Musa.pdf"
     }
   ];
 
