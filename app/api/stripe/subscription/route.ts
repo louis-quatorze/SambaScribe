@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getUserSubscription, canAccessPaidFeatures } from "@/lib/services/stripe";
+import { prisma } from "@/lib/db";
+import Stripe from "stripe";
 
-export async function GET(request: Request) {
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error("Missing STRIPE_SECRET_KEY");
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-03-31.basil",
+});
+
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -11,17 +20,32 @@ export async function GET(request: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const userId = session.user.id;
-    const subscription = await getUserSubscription(userId);
-    const hasAccess = await canAccessPaidFeatures(userId);
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId: session.user.id,
+        status: {
+          in: ["active", "trialing"],
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-    return NextResponse.json({ 
-      subscription,
-      hasAccess
+    if (!subscription) {
+      return NextResponse.json(null);
+    }
+
+    return NextResponse.json({
+      ...subscription,
+      currentPeriodStart: subscription.currentPeriodStart.toISOString(),
+      currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
     });
   } catch (error) {
     console.error("Error getting subscription:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-    return new NextResponse(`Error: ${errorMessage}`, { status: 500 });
+    return new NextResponse(
+      `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      { status: 500 }
+    );
   }
 } 

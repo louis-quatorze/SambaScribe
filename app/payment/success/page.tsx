@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { prisma } from '@/lib/db';
 
 // The component that uses useSearchParams must be wrapped in Suspense
 function SuccessContent() {
@@ -20,11 +19,29 @@ function SuccessContent() {
     const verifyPayment = async () => {
       try {
         const sessionId = searchParams.get('session_id');
+        
+        // First check if the user already has access (webhook might have already processed)
+        if (session?.user) {
+          // Check user's subscription status directly
+          const userStatusResponse = await fetch('/api/user/status');
+          if (userStatusResponse.ok) {
+            const userData = await userStatusResponse.json();
+            if (userData.hasPaidAccess) {
+              // User already has access, no need for further verification
+              setIsSuccess(true);
+              setIsVerifying(false);
+              return;
+            }
+          }
+        }
+        
+        // If no session ID or couldn't verify user status, and user doesn't have access yet
         if (!sessionId) {
           setIsVerifying(false);
           return;
         }
         
+        // Try to verify through the session ID
         const response = await fetch(`/api/stripe/subscription?session_id=${sessionId}`);
         if (!response.ok) {
           throw new Error('Failed to verify payment');
@@ -58,6 +75,11 @@ function SuccessContent() {
       } catch (error) {
         console.error(error);
         toast.error('Failed to verify payment status');
+        
+        // Even if verification fails, check if the user has access in their session
+        if (session?.user?.hasPaidAccess) {
+          setIsSuccess(true);
+        }
       } finally {
         setIsVerifying(false);
       }
@@ -95,10 +117,10 @@ function SuccessContent() {
       ) : (
         <>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-4">
-            Payment Verification Failed
+            Payment Verification
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
-            We couldn't verify your payment. If you believe this is an error, please contact customer support.
+            If you've already made a payment, please check your dashboard to access premium features. It may take a few moments for your payment to be processed.
           </p>
         </>
       )}

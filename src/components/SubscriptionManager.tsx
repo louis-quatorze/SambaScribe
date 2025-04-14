@@ -8,10 +8,11 @@ import { Loader2, CreditCard, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface Subscription {
   id: string;
+  userId: string;
   status: string;
-  subscriptionType: string;
+  currentPeriodStart: string;
   currentPeriodEnd: string;
-  cancelAtPeriodEnd: boolean;
+  subscriptionType: string;
 }
 
 export function SubscriptionManager() {
@@ -35,7 +36,7 @@ export function SubscriptionManager() {
         }
         
         const data = await response.json();
-        setSubscription(data.subscription);
+        setSubscription(data);
         setHasAccess(data.hasAccess);
       } catch (error) {
         console.error('Error fetching subscription:', error);
@@ -150,13 +151,10 @@ export function SubscriptionManager() {
           </div>
           
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {subscription.cancelAtPeriodEnd 
-              ? `Your subscription will end on ${formatDate(subscription.currentPeriodEnd)}`
-              : `Next billing date: ${formatDate(subscription.currentPeriodEnd)}`
-            }
+            {new Date(subscription.currentPeriodStart).toLocaleDateString()} - {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
           </p>
           
-          {subscription.cancelAtPeriodEnd && (
+          {subscription.status === 'active' && (
             <div className="mt-3 flex items-center text-sm text-amber-600 dark:text-amber-400">
               <AlertCircle className="w-4 h-4 mr-1" />
               <span>Your subscription has been canceled and will not renew</span>
