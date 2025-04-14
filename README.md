@@ -12,6 +12,32 @@ SambaScribe is an application that analyzes Samba percussion notation and genera
 - Backend processing of notation files
 - AI-generated summaries and mnemonics
 - Specialized detection for common patterns like Butterfly and Ballerina breaks
+- Subscription system with:
+  - Free tier with sample files
+  - Premium access with one-time payments
+  - Weekly premium subscription option
+  - Secure payment processing via Stripe
+  - Automatic access management
+  - Session-based feature access control
+
+### Payment & Subscription Features
+
+- **Payment Processing**:
+  - Secure Stripe integration for payments
+  - Support for one-time purchases and subscriptions
+  - Webhook handling for payment status updates
+
+- **Access Control**:
+  - JWT-based session management
+  - Database-backed access verification
+  - Middleware protection for premium routes
+  - Automatic session synchronization
+
+- **User Experience**:
+  - Seamless payment flow
+  - Instant access after payment
+  - Clear subscription status display
+  - Automatic renewal handling
 
 ---
 

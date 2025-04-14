@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerAuthSession } from "@/lib/auth";
-import { getUserSubscription } from "@/lib/services/stripe";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import Stripe from "stripe";
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -11,66 +12,39 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-03-31.basil",
 });
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const session = await getServerAuthSession();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Check for session_id in query params for manual verification
-    const url = new URL(request.url);
-    const checkoutSessionId = url.searchParams.get('session_id');
-    
-    if (checkoutSessionId) {
-      // Verify the checkout session
-      const checkoutSession = await stripe.checkout.sessions.retrieve(checkoutSessionId);
-      
-      if (checkoutSession.payment_status === 'paid' && checkoutSession.metadata?.userId === session.user.id) {
-        // Manually update user access
-        const { prisma } = await import('@/lib/db');
-        await prisma.user.update({
-          where: { id: session.user.id },
-          data: { hasPaidAccess: true }
-        });
-        
-        if (checkoutSession.mode === 'payment' && checkoutSession.metadata?.productType === 'premium_weekly') {
-          const now = new Date();
-          const oneWeekFromNow = new Date(now);
-          oneWeekFromNow.setDate(now.getDate() + 7);
-          
-          await prisma.subscription.create({
-            data: {
-              userId: session.user.id,
-              stripeSubscriptionId: `one_time_${checkoutSession.id}`,
-              status: 'active',
-              subscriptionType: 'individual',
-              currentPeriodStart: now,
-              currentPeriodEnd: oneWeekFromNow,
-              cancelAtPeriodEnd: true,
-            },
-          });
-        }
-      }
-    }
-
-    const subscription = await getUserSubscription(session.user.id);
-    
-    // Get the user's current access status
-    const { prisma } = await import('@/lib/db');
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { hasPaidAccess: true }
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId: session.user.id,
+        status: {
+          in: ["active", "trialing"],
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    return NextResponse.json({ 
-      subscription,
-      hasAccess: user?.hasPaidAccess || false
+    if (!subscription) {
+      return NextResponse.json(null);
+    }
+
+    return NextResponse.json({
+      ...subscription,
+      currentPeriodStart: subscription.currentPeriodStart.toISOString(),
+      currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
     });
   } catch (error) {
-    console.error('Error fetching subscription:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch subscription' },
+    console.error("Error getting subscription:", error);
+    return new NextResponse(
+      `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
       { status: 500 }
     );
   }
