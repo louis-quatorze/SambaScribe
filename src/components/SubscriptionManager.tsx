@@ -168,25 +168,28 @@ export function SubscriptionManager() {
         </div>
       </div>
       
-      <div className="space-y-3">
-        <button
-          onClick={handleManageSubscription}
-          disabled={isManaging}
-          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
-        >
-          {isManaging ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Manage Subscription
-            </>
-          )}
-        </button>
-      </div>
+      {/* Only show manage button for recurring subscriptions */}
+      {!subscription.stripeSubscriptionId.startsWith('one_time_') && (
+        <div className="space-y-3">
+          <button
+            onClick={handleManageSubscription}
+            disabled={isManaging}
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
+          >
+            {isManaging ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Manage Subscription
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 } 
