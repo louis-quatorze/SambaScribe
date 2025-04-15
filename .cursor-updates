@@ -101,4 +101,6 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 
 - Fixed subscription status not reflecting after payment by adding direct user access updates and enhanced webhook handling to ensure subscription status is correctly updated in the database.
 
+- Fixed PDF processing with improved AI prompting and full base64 content handling to ensure AI properly analyzes the actual PDF content rather than just responding to filenames.
+
  

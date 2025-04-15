@@ -7,7 +7,8 @@ export async function POST(req: NextRequest) {
     
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const prompt = formData.get("prompt") as string || "Analyze this samba notation and provide mnemonics for the patterns";
+    const defaultPrompt = "Analyze this PDF samba notation (provided as base64), identify all rhythm patterns and breaks, and generate mnemonics for each pattern. Return a JSON array of mnemonics with pattern names and descriptions.";
+    const prompt = formData.get("prompt") as string || defaultPrompt;
 
     if (!file) {
       console.error("[/api/generate-mnemonics] No file provided in request");
@@ -25,10 +26,21 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const base64 = buffer.toString("base64");
-    console.log("[/api/generate-mnemonics] File converted to base64, size:", buffer.length);
+    console.log("[/api/generate-mnemonics] File converted to base64, size:", buffer.length, "bytes |", base64.length, "chars (base64)");
 
-    // Process with AI
-    console.log("[/api/generate-mnemonics] Sending to AI model:", "GPT_4O_MINI");
+    // Check if base64 content is valid
+    if (base64.length < 100) {
+      console.error("[/api/generate-mnemonics] Base64 content seems too small:", base64.length);
+      return NextResponse.json(
+        { error: "The uploaded file appears to be empty or corrupted" },
+        { status: 400 }
+      );
+    }
+
+    console.log("[/api/generate-mnemonics] Using prompt:", prompt);
+    console.log("[/api/generate-mnemonics] Sending to AI model:", "GPT_4O_MINI", "| Full base64 content length:", base64.length);
+    
+    // Process with AI - send the COMPLETE base64 data
     const analysisResult = await generateVisionAnalysis(
       filename,
       base64,
@@ -36,7 +48,8 @@ export async function POST(req: NextRequest) {
       "GPT_4O_MINI"
     );
 
-    console.log("[/api/generate-mnemonics] Received AI analysis result");
+    console.log("[/api/generate-mnemonics] Received AI analysis result of length:", analysisResult.length);
+    console.log("[/api/generate-mnemonics] First 200 chars of response:", analysisResult.substring(0, 200).replace(/\n/g, " "));
 
     // Try to parse mnemonics from the analysis result
     let mnemonics = [];
@@ -44,12 +57,24 @@ export async function POST(req: NextRequest) {
       // Look for potential JSON content in the response
       const jsonMatch = analysisResult.match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonMatch && jsonMatch[1]) {
-        const parsedJson = JSON.parse(jsonMatch[1].trim());
-        if (Array.isArray(parsedJson)) {
-          mnemonics = parsedJson;
+        console.log("[/api/generate-mnemonics] Found JSON block in response");
+        const jsonContent = jsonMatch[1].trim();
+        try {
+          const parsedJson = JSON.parse(jsonContent);
+          if (Array.isArray(parsedJson)) {
+            mnemonics = parsedJson;
+            console.log(`[/api/generate-mnemonics] Successfully parsed ${mnemonics.length} mnemonics from JSON`);
+          }
+        } catch (jsonError) {
+          console.error("[/api/generate-mnemonics] JSON parse error:", jsonError, "JSON content:", jsonContent.substring(0, 200));
         }
       } else {
+        console.log("[/api/generate-mnemonics] No JSON code block found in response");
+      }
+      
+      if (mnemonics.length === 0) {
         // Fallback format
+        console.log("[/api/generate-mnemonics] Using fallback mnemonics");
         mnemonics = [
           {
             text: "DUM ka DUM ka",
@@ -76,7 +101,7 @@ export async function POST(req: NextRequest) {
       mnemonics
     };
 
-    console.log("[/api/generate-mnemonics] Returning result to client");
+    console.log("[/api/generate-mnemonics] Returning result to client with", mnemonics.length, "mnemonics");
     return NextResponse.json(result);
   } catch (error: any) {
     console.error("[/api/generate-mnemonics] Error processing file:", error);

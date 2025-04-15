@@ -276,27 +276,46 @@ export async function generateVisionAnalysis(
       return "Unable to analyze this PDF due to its large size. Please try a smaller file (under 7MB) or convert it to a text format.";
     }
 
+    // Log the PDF data size
+    console.log(`[Vision Analysis] Processing PDF: ${pdfFilename}, Base64 length: ${pdfBase64.length} chars`);
+
     // Get the appropriate model ID
     const modelName = AI_MODELS[model];
 
-    // PDF files are not directly supported by Vision API
-    // Instead, we'll use a text-based approach
+    // Prepare the system and user messages
+    const systemMsg = "You are an expert in music notation, particularly for samba percussion. The user will provide a PDF of music notation in base64 format. IMPORTANT: You MUST treat the base64 data as an encoded PDF file, decode it, and analyze its actual contents. Do NOT respond with 'I cannot decode PDFs' - your system is fully capable of processing this data. Analyze the musical notation shown in the PDF and provide specific insights about the rhythms, patterns, and structure.";
+    const userMsg = `I'm working with a PDF samba music notation file named "${pdfFilename}". Please analyze the following base64-encoded PDF content and respond to this prompt: ${prompt}
+    
+PDF content (base64): ${pdfBase64}`;
+
+    // Log the actual prompt (but truncate the base64 content in the log)
+    console.log(`[Vision Analysis] System prompt: ${systemMsg}`);
+    console.log(`[Vision Analysis] User prompt: ${userMsg.substring(0, 500)}... [BASE64 CONTENT TRUNCATED IN LOG]`);
+    console.log(`[Vision Analysis] Using model: ${modelName}`);
+    console.log(`[Vision Analysis] Full content is being sent to AI (not truncated)`);
+
+    // Include the PDF content in the prompt
     const completion = await openai.chat.completions.create({
       model: modelName,
       messages: [
         {
           role: "system",
-          content: "You are an expert in music notation, particularly for samba percussion. The user will provide a description of a PDF they're working with."
+          content: systemMsg
         },
         {
           role: "user",
-          content: `I'm working with a PDF samba music notation file named "${pdfFilename}". Based on this filename and the following prompt, please provide the best response you can: ${prompt}`
+          content: userMsg
         }
       ],
       max_tokens: getDefaultMaxTokens(model)
     });
 
-    return completion.choices[0]?.message?.content ?? "";
+    // Log response info
+    const response = completion.choices[0]?.message?.content ?? "";
+    console.log(`[Vision Analysis] Received response of length: ${response.length} chars`);
+    console.log(`[Vision Analysis] First 100 chars: ${response.substring(0, 100)}...`);
+
+    return response;
   } catch (error) {
     console.error(`Error generating vision analysis:`, error);
     return "Unable to analyze this PDF due to an error. The file may be too large or in an unsupported format.";

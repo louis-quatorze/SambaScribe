@@ -141,7 +141,7 @@ Keep the summary informative and highlight the most important aspects of the not
   TEXT_SUMMARY: (filename: string, content: string) => `
 ${PROMPT_TEMPLATES.FILE_INTRO('text file', filename)} and the following content:
       
-"${content.substring(0, 1500)}${content.length > 1500 ? '...' : ''}"
+"${content}}"
 
 Please provide a concise summary (under 100 words) of this notation. 
 
@@ -158,13 +158,13 @@ ${PROMPT_TEMPLATES.MNEMONICS_BASE}
 
 ${PROMPT_TEMPLATES.MNEMONICS_EXAMPLES}
 
-PDF base64 content (first part): ${content.substring(0, 100000)}${content.length > 100000 ? '...' : ''}`,
+PDF base64 content: ${content}`,
 
   TEXT_MNEMONICS: (summary: string, content: string) => `
 Based on this summary: "${summary}" 
       
 And this samba notation content:
-"${content.substring(0, 1000)}${content.length > 1000 ? '...' : ''}"
+"${content}"
 
 Create 20 vocal mnemonics (syllables or words) that match the rhythm patterns in this notation.
 Consider the primary accents, syncopations, and any special patterns described.
@@ -357,7 +357,7 @@ async function generateAISummary(
         model: 'GPT_4O_MINI',
         messages: [
           { role: "system", content: PROMPT_TEMPLATES.SYSTEM_SUMMARY },
-          { role: "user", content: `${textPrompt}\n\nBase64 PDF content: ${content.substring(0, 50000)}${content.length > 50000 ? '...' : ''}` }
+          { role: "user", content: `${textPrompt}\n\nBase64 PDF content: ${content}` }
         ]
       });
       console.log('PDF content-based summary generated successfully');
