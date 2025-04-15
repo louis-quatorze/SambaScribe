@@ -46,25 +46,83 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
       
       // Construct the URL for the sample file
       const sampleFileUrl = `/samples/${file.filename}`;
-      console.log("Processing sample file:", sampleFileUrl);
+      console.log("[SampleFiles] Processing sample file:", sampleFileUrl);
       
-      // Try the direct API route first
-      const apiEndpoints = [
-        "/api/process",
-        "/api"  // Fallback to root API if /api/process is not available
-      ];
+      // Try the API endpoint
+      const apiUrl = "/api/process";
+      console.log("[SampleFiles] Calling API endpoint:", apiUrl);
       
-      let aiProcessResponse = null;
-      let errorText = "";
+      const requestBody = { fileUrl: sampleFileUrl };
+      console.log("[SampleFiles] Request body:", JSON.stringify(requestBody));
       
-      // Try each API endpoint in order
-      for (const apiUrl of apiEndpoints) {
-        console.log(`Trying API endpoint: ${apiUrl}`);
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
         
-        const requestBody = { fileUrl: sampleFileUrl };
+        console.log(`[SampleFiles] API response status:`, response.status);
         
-        try {
-          const response = await fetch(apiUrl, {
+        // If we get a successful response, use it
+        if (response.ok) {
+          const responseText = await response.text();
+          console.log("[SampleFiles] Response text (first 100 chars):", responseText.substring(0, 100) + "...");
+          
+          try {
+            const processData = JSON.parse(responseText);
+            console.log("[SampleFiles] Successfully parsed JSON response");
+            
+            if (!processData || typeof processData !== 'object') {
+              console.error("[SampleFiles] Invalid response format:", typeof processData);
+              toast.error("AI analysis returned an invalid response format");
+              return;
+            }
+            
+            toast.success(`${file.title} analyzed with AI successfully`);
+            
+            if (onProcessComplete) {
+              const aiData = processData.data || processData;
+              console.log("[SampleFiles] Final AI data:", aiData);
+              
+              if (typeof aiData === 'object' &&
+                  typeof aiData.filename === 'string' &&
+                  typeof aiData.aiSummary === 'string' &&
+                  Array.isArray(aiData.mnemonics)) {
+                onProcessComplete(aiData);
+              } else {
+                console.error("[SampleFiles] AI data is missing required fields:", aiData);
+                const fallbackData = {
+                  filename: file.filename,
+                  aiSummary: "The file was analyzed but returned unexpected data. Please try another file.",
+                  mnemonics: [
+                    { text: "Error in processing", pattern: "Error", description: "unexpected data format" },
+                    { text: "Please try again", pattern: "Error", description: "retry recommended" },
+                    { text: "Contact support if needed", pattern: "Support", description: "get help" }
+                  ]
+                };
+                
+                toast.warning("AI analysis completed with unexpected results");
+                onProcessComplete(fallbackData);
+              }
+            }
+          } catch (parseError) {
+            console.error("[SampleFiles] Failed to parse API response:", parseError);
+            throw new Error("Received invalid response format from API");
+          }
+        } else {
+          // Try fallback endpoint if primary fails
+          console.error(`[SampleFiles] Primary API failed with status ${response.status}, trying fallback`);
+          const errorText = await response.text();
+          console.error(`[SampleFiles] Error text:`, errorText.substring(0, 100));
+          
+          // Call the fallback API
+          const fallbackUrl = "/api";
+          console.log("[SampleFiles] Calling fallback API:", fallbackUrl);
+          
+          const fallbackResponse = await fetch(fallbackUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -72,69 +130,32 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
             body: JSON.stringify(requestBody),
           });
           
-          console.log(`API response from ${apiUrl}:`, response.status);
+          console.log(`[SampleFiles] Fallback API response:`, fallbackResponse.status);
           
-          // If we get a successful response, use it
-          if (response.ok) {
-            aiProcessResponse = response;
-            break;
-          } else if (!errorText) {
-            // Store the first error text we encounter
-            errorText = await response.text();
+          if (!fallbackResponse.ok) {
+            console.error(`[SampleFiles] Fallback API also failed: ${fallbackResponse.status}`);
+            const fallbackErrorText = await fallbackResponse.text();
+            throw new Error(`API processing failed: ${fallbackErrorText.substring(0, 100)}...`);
           }
-        } catch (error) {
-          console.error(`Error calling ${apiUrl}:`, error);
-        }
-      }
-      
-      // If all attempts failed
-      if (!aiProcessResponse) {
-        console.error("All API endpoints failed");
-        throw new Error(`API processing failed: ${errorText.substring(0, 100)}...`);
-      }
-
-      let processData;
-      try {
-        const responseText = await aiProcessResponse.text();
-        console.log("Processing successful response:", responseText.substring(0, 100) + "...");
-        processData = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Failed to parse API response:", parseError);
-        throw new Error("Received invalid response format from API");
-      }
-      
-      if (!processData || typeof processData !== 'object') {
-        toast.error("AI analysis returned an invalid response format");
-        return;
-      }
-      
-      toast.success(`${file.title} analyzed with AI successfully`);
-      
-      if (onProcessComplete) {
-        const aiData = processData.data || processData;
-        
-        if (typeof aiData === 'object' &&
-            typeof aiData.filename === 'string' &&
-            typeof aiData.aiSummary === 'string' &&
-            Array.isArray(aiData.mnemonics)) {
-          onProcessComplete(aiData);
-        } else {
-          const fallbackData = {
-            filename: file.filename,
-            aiSummary: "The file was analyzed but returned unexpected data. Please try another file.",
-            mnemonics: [
-              { text: "Error in processing", pattern: "Error", description: "unexpected data format" },
-              { text: "Please try again", pattern: "Error", description: "retry recommended" },
-              { text: "Contact support if needed", pattern: "Support", description: "get help" }
-            ]
-          };
           
-          toast.warning("AI analysis completed with unexpected results");
-          onProcessComplete(fallbackData);
+          const fallbackText = await fallbackResponse.text();
+          console.log("[SampleFiles] Fallback response text (first 100 chars):", fallbackText.substring(0, 100) + "...");
+          
+          const fallbackData = JSON.parse(fallbackText);
+          
+          toast.success(`${file.title} analyzed with the fallback API`);
+          
+          if (onProcessComplete && fallbackData) {
+            console.log("[SampleFiles] Fallback data:", fallbackData);
+            onProcessComplete(fallbackData);
+          }
         }
+      } catch (error) {
+        console.error("[SampleFiles] Error during API call:", error);
+        throw error;
       }
     } catch (error) {
-      console.error("Process error:", error);
+      console.error("[SampleFiles] Process error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to process file. Please try again.");
       
       if (onProcessComplete) {

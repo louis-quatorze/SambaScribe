@@ -50,6 +50,7 @@
 - Fixed type compatibility issues between components
 - Fixed OpenAI API key error by implementing server-side only AI client with proper safety checks and API routes for client-side processing.
 - Fixed API route 404 error by recreating API route files with proper content and fixing file corruption issues.
+- Fixed API endpoint 404 errors for sample file processing by creating correct API routes in app/api directory structure (process and root endpoints) and adding comprehensive logging for better debugging.
 
 # SambaScribe Updates
 
