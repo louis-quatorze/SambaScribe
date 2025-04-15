@@ -1,0 +1,102 @@
+import { NextRequest, NextResponse } from "next/server";
+import { generateChatCompletion } from "@/lib/aiClient";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { fileUrl } = await req.json();
+
+    if (!fileUrl) {
+      return NextResponse.json(
+        { error: "No file URL provided" },
+        { status: 400 }
+      );
+    }
+
+    // 1. Get file content from URL
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.statusText}`);
+    }
+    const content = await response.text();
+
+    // Extract filename from URL
+    const filename = new URL(fileUrl).pathname.split('/').pop() || 'unknown.pdf';
+
+    // 2. Generate summary using AI
+    const aiSummary = await generateChatCompletion({
+      model: 'GPT_4O_MINI',
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that generates concise summaries of samba notation documents. Generate a summary that captures the key patterns and rhythm notations."
+        },
+        {
+          role: "user",
+          content: `Please analyze this samba notation and provide a summary:\n\n${content.substring(0, 5000)}`
+        }
+      ]
+    });
+
+    // 3. Generate mnemonics
+    const mnemonicsPrompt = `
+      Analyze the following samba notation and create memorable mnemonics to help remember the rhythmic patterns:
+      
+      ${content.substring(0, 5000)}
+      
+      For each distinct pattern, create a mnemonic with these properties:
+      1. The pattern - describe the actual rhythm notation
+      2. The mnemonic - a word or phrase that helps remember the rhythm
+      3. A description of how the mnemonic relates to the pattern
+      
+      Return your response in the following format:
+      [
+        {
+          "pattern": "pattern description",
+          "mnemonic": "mnemonic phrase",
+          "description": "explanation"
+        }
+      ]
+    `;
+
+    const mnemonicsResponse = await generateChatCompletion({
+      model: 'GPT_4O_MINI',
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that creates memorable mnemonics for samba rhythms and notation. Return your response as a JSON array."
+        },
+        {
+          role: "user",
+          content: mnemonicsPrompt
+        }
+      ]
+    });
+
+    // Parse the mnemonics response
+    let mnemonics = [];
+    try {
+      // Try to parse the JSON response
+      mnemonics = JSON.parse(mnemonicsResponse);
+      
+      // Ensure it's an array
+      if (!Array.isArray(mnemonics)) {
+        mnemonics = [];
+      }
+    } catch (error) {
+      console.error("Error parsing mnemonics JSON:", error);
+      mnemonics = [];
+    }
+
+    return NextResponse.json({
+      filename,
+      aiSummary,
+      mnemonics
+    });
+  } catch (error: any) {
+    console.error("Error processing file:", error);
+    return NextResponse.json(
+      { error: error.message || "An error occurred processing the file" },
+      { status: 500 }
+    );
+  }
+} 

@@ -48,6 +48,7 @@
 - Created AI client module for chat completions
 - Updated types to support rich mnemonic data structure
 - Fixed type compatibility issues between components
+- Fixed OpenAI API key error by implementing server-side only AI client with proper safety checks and API routes for client-side processing.
 
 # SambaScribe Updates
 

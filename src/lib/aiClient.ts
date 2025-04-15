@@ -49,6 +49,9 @@ import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ChatCompletionMessage } from "openai/resources/chat/completions";
 
+// This ensures the file only runs on the server side
+const isServer = typeof window === 'undefined';
+
 // Custom type for Gemini API request
 interface GeminiGroundedResponse {
   text: string;
@@ -77,25 +80,36 @@ export const AI_MODELS = {
 
 export type AIModel = keyof typeof AI_MODELS;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Only initialize the API clients on the server
+let openai: OpenAI | null = null;
+let perplexity: OpenAI | null = null;
+let genAI: any = null;
 
-const perplexity = new OpenAI({
-  apiKey: process.env.PERPLEXITY_API_KEY,
-  baseURL: "https://api.perplexity.ai",
-});
+if (isServer) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+  perplexity = new OpenAI({
+    apiKey: process.env.PERPLEXITY_API_KEY,
+    baseURL: "https://api.perplexity.ai",
+  });
+
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+}
 
 function getClientForModel(model: AIModel): AIClientResponse {
+  if (!isServer) {
+    throw new Error("AI clients can only be accessed from the server");
+  }
+  
   const modelId = AI_MODELS[model];
 
   if (modelId.includes("sonar")) {
-    return { client: perplexity, type: "openai" };
+    return { client: perplexity as OpenAI, type: "openai" };
   }
 
-  return { client: openai, type: "openai" };
+  return { client: openai as OpenAI, type: "openai" };
 }
 
 /**
@@ -172,11 +186,34 @@ interface ChatCompletionParams {
 }
 
 export async function generateChatCompletion(params: ChatCompletionParams): Promise<string> {
-  const { model = 'O1', messages } = params;
-
-  // TODO: Implement actual AI API call
-  // For now, return mock response
-  return "This is a mock AI response";
+  try {
+    if (!isServer) {
+      throw new Error("This function can only be executed on the server side");
+    }
+    
+    const { model = 'O1', messages } = params;
+    
+    // Check if openai client is initialized
+    if (!openai) {
+      console.warn("OpenAI client not initialized, returning mock response");
+      return "This is a mock AI response";
+    }
+    
+    // Get the appropriate AI model
+    const modelName = AI_MODELS[model as AIModel] || "gpt-4o";
+    
+    // Make the API call to OpenAI
+    const completion = await openai.chat.completions.create({
+      model: modelName,
+      messages: messages as any,
+      max_tokens: getDefaultMaxTokens(model as AIModel),
+    });
+    
+    return completion.choices[0]?.message?.content || "No response generated";
+  } catch (error) {
+    console.error("Error generating chat completion:", error);
+    return "Sorry, there was an error generating a response.";
+  }
 }
 
 /**
@@ -224,9 +261,14 @@ function getDefaultMaxTokens(model: AIModel): number {
 export async function generateVisionAnalysis(
   pdfFilename: string, 
   pdfBase64: string, 
-  prompt: string
+  prompt: string,
+  model: AIModel = "GPT_4O"
 ): Promise<string> {
   try {
+    if (!isServer || !openai) {
+      throw new Error("OpenAI client is only available on the server side");
+    }
+
     // Check if the base64 data exceeds reasonable size limits
     const maxBase64Size = 10 * 1024 * 1024; // Around 7.5MB PDF size
     if (pdfBase64.length > maxBase64Size) {
@@ -234,10 +276,13 @@ export async function generateVisionAnalysis(
       return "Unable to analyze this PDF due to its large size. Please try a smaller file (under 7MB) or convert it to a text format.";
     }
 
+    // Get the appropriate model ID
+    const modelName = AI_MODELS[model];
+
     // PDF files are not directly supported by Vision API
     // Instead, we'll use a text-based approach
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: modelName,
       messages: [
         {
           role: "system",
@@ -248,7 +293,7 @@ export async function generateVisionAnalysis(
           content: `I'm working with a PDF samba music notation file named "${pdfFilename}". Based on this filename and the following prompt, please provide the best response you can: ${prompt}`
         }
       ],
-      max_tokens: 10240
+      max_tokens: getDefaultMaxTokens(model)
     });
 
     return completion.choices[0]?.message?.content ?? "";

@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { Upload } from "lucide-react";
-import { uploadFile } from "@/lib/upload";
 import { AiNotationData } from "@/lib/types";
-import { processFile } from "@/lib/api/process";
 
 interface PdfUploadProps {
   onProcessComplete: (data: AiNotationData) => void;
@@ -34,15 +32,26 @@ export function PdfUpload({ onProcessComplete, maxSizeMB = 10 }: PdfUploadProps)
 
     setUploading(true);
     try {
-      // First upload the file
-      const uploadResponse = await uploadFile(file);
-      if (!uploadResponse.success || !uploadResponse.url) {
-        throw new Error(uploadResponse.error || "Upload failed");
+      toast.info("Analyzing PDF with AI...");
+      
+      // Create form data with the file
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("prompt", "Analyze this samba notation and provide mnemonics for the patterns");
+      
+      // Use the server-side API endpoint to process the file
+      const response = await fetch("/api/generate-mnemonics", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to process file");
       }
-
-      // Then process it
-      const processResponse = await processFile(uploadResponse.url);
-      onProcessComplete(processResponse);
+      
+      const data = await response.json();
+      onProcessComplete(data);
       toast.success("File processed successfully");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to process file");
