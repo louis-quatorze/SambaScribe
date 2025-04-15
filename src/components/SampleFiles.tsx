@@ -43,32 +43,60 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
     try {
       setIsProcessing(file.id);
       toast.info(`AI is analyzing ${file.title}...`);
-
-      const aiProcessResponse = await fetch("/api/process", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          fileUrl: `/samples/${file.filename}` 
-        }),
-      });
-
-      if (!aiProcessResponse.ok) {
-        const errorText = await aiProcessResponse.text();
-        console.error("API error response:", errorText);
+      
+      // Construct the URL for the sample file
+      const sampleFileUrl = `/samples/${file.filename}`;
+      console.log("Processing sample file:", sampleFileUrl);
+      
+      // Try the direct API route first
+      const apiEndpoints = [
+        "/api/process",
+        "/api"  // Fallback to root API if /api/process is not available
+      ];
+      
+      let aiProcessResponse = null;
+      let errorText = "";
+      
+      // Try each API endpoint in order
+      for (const apiUrl of apiEndpoints) {
+        console.log(`Trying API endpoint: ${apiUrl}`);
+        
+        const requestBody = { fileUrl: sampleFileUrl };
         
         try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(errorData.error || "AI processing failed");
-        } catch (parseError) {
-          throw new Error(`AI processing failed: ${errorText.substring(0, 100)}...`);
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          });
+          
+          console.log(`API response from ${apiUrl}:`, response.status);
+          
+          // If we get a successful response, use it
+          if (response.ok) {
+            aiProcessResponse = response;
+            break;
+          } else if (!errorText) {
+            // Store the first error text we encounter
+            errorText = await response.text();
+          }
+        } catch (error) {
+          console.error(`Error calling ${apiUrl}:`, error);
         }
+      }
+      
+      // If all attempts failed
+      if (!aiProcessResponse) {
+        console.error("All API endpoints failed");
+        throw new Error(`API processing failed: ${errorText.substring(0, 100)}...`);
       }
 
       let processData;
       try {
         const responseText = await aiProcessResponse.text();
+        console.log("Processing successful response:", responseText.substring(0, 100) + "...");
         processData = JSON.parse(responseText);
       } catch (parseError) {
         console.error("Failed to parse API response:", parseError);

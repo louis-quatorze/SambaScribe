@@ -4,6 +4,7 @@ import { generateChatCompletion } from "@/lib/aiClient";
 export async function POST(req: NextRequest) {
   try {
     const { fileUrl } = await req.json();
+    console.log("Process API received fileUrl:", fileUrl);
 
     if (!fileUrl) {
       return NextResponse.json(
@@ -13,8 +14,15 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Get file content from URL
-    const response = await fetch(fileUrl);
+    const fullUrl = fileUrl.startsWith('http') 
+      ? fileUrl 
+      : new URL(fileUrl, process.env.NEXTAUTH_URL || `http://localhost:${process.env.PORT || '3001'}`).toString();
+    
+    console.log("Attempting to fetch file from:", fullUrl);
+    
+    const response = await fetch(fullUrl);
     if (!response.ok) {
+      console.error(`Failed to fetch file: ${response.statusText}, Status: ${response.status}`);
       throw new Error(`Failed to fetch file: ${response.statusText}`);
     }
     const content = await response.text();
