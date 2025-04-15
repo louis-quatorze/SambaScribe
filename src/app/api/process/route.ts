@@ -75,16 +75,44 @@ export async function POST(req: NextRequest) {
     // Parse the mnemonics response
     let mnemonics = [];
     try {
-      // Try to parse the JSON response
-      mnemonics = JSON.parse(mnemonicsResponse);
+      // Check if the response looks like a JSON array
+      const cleanedResponse = mnemonicsResponse.trim();
+      if (cleanedResponse.startsWith('[') && cleanedResponse.endsWith(']')) {
+        // Try to parse the JSON response
+        mnemonics = JSON.parse(cleanedResponse);
+      } else if (cleanedResponse.includes('```json')) {
+        // Handle markdown code blocks with JSON
+        const jsonMatch = cleanedResponse.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch && jsonMatch[1]) {
+          mnemonics = JSON.parse(jsonMatch[1].trim());
+        }
+      } else {
+        // If response is not JSON, create a simple fallback mnemonic
+        console.warn("Mnemonics response was not in JSON format:", cleanedResponse);
+        mnemonics = [
+          {
+            pattern: "Basic pattern",
+            mnemonic: "Example mnemonic",
+            description: "This is a fallback mnemonic since the AI response was not in JSON format"
+          }
+        ];
+      }
       
       // Ensure it's an array
       if (!Array.isArray(mnemonics)) {
+        console.warn("Parsed mnemonics is not an array:", mnemonics);
         mnemonics = [];
       }
     } catch (error) {
       console.error("Error parsing mnemonics JSON:", error);
-      mnemonics = [];
+      // Provide fallback mnemonics
+      mnemonics = [
+        {
+          pattern: "Example pattern",
+          mnemonic: "Example mnemonic",
+          description: "This is a fallback mnemonic since there was an error parsing the AI response"
+        }
+      ];
     }
 
     return NextResponse.json({
@@ -99,4 +127,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

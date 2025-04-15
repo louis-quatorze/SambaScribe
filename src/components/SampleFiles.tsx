@@ -55,11 +55,25 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
       });
 
       if (!aiProcessResponse.ok) {
-        const data = await aiProcessResponse.json();
-        throw new Error(data.error || "AI processing failed");
+        const errorText = await aiProcessResponse.text();
+        console.error("API error response:", errorText);
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || "AI processing failed");
+        } catch (parseError) {
+          throw new Error(`AI processing failed: ${errorText.substring(0, 100)}...`);
+        }
       }
 
-      const processData = await aiProcessResponse.json();
+      let processData;
+      try {
+        const responseText = await aiProcessResponse.text();
+        processData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse API response:", parseError);
+        throw new Error("Received invalid response format from API");
+      }
       
       if (!processData || typeof processData !== 'object') {
         toast.error("AI analysis returned an invalid response format");
