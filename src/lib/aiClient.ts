@@ -488,7 +488,7 @@ export async function analyzeMusicSheetPdf(
     console.log(`[Music Sheet Analysis] Processing PDF: ${filename}, Base64 length: ${truncatedBase64.length} chars${wasFileTruncated ? ' (truncated)' : ''}`);
     
     // Default prompt if none provided
-    const defaultPrompt = "Analyze this samba music sheet PDF, identify all rhythm patterns, and generate mnemonics for each pattern. Return a JSON object with 'analysis' containing your detailed analysis and 'mnemonics' containing an array of mnemonic objects.";
+    const defaultPrompt = "Analyze this samba music sheet PDF, identify all rhythm patterns, and generate mnemonics for each pattern. Return a JSON object with 'analysis' containing your detailed analysis and 'mnemonics' containing an array of mnemonic objects. Also return all captions and labelled sections in the PDF.";
     const finalPrompt = prompt || defaultPrompt;
 
     // Create system message
