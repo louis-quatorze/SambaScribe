@@ -183,6 +183,10 @@ interface ChatMessage {
 interface ChatCompletionParams {
   model: string;
   messages: ChatMessage[];
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+  top_k?: number;
 }
 
 export async function generateChatCompletion(params: ChatCompletionParams): Promise<string> {
@@ -191,24 +195,59 @@ export async function generateChatCompletion(params: ChatCompletionParams): Prom
       throw new Error("This function can only be executed on the server side");
     }
     
-    const { model = 'O1', messages } = params;
+    const {
+       model = 'GPT_4O',
+       messages,
+       temperature,
+       max_tokens,
+       top_p,
+    } = params;
     
-    // Check if openai client is initialized
     if (!openai) {
       console.warn("OpenAI client not initialized, returning mock response");
       return "This is a mock AI response";
     }
     
-    // Get the appropriate AI model
     const modelName = AI_MODELS[model as AIModel] || "gpt-4o";
+    // Consider O1 as a Claude-compatible model - it has the same parameter restrictions
+    const isClaude = modelName.includes("claude") || model === "O1" || modelName === "o1-2024-12-17";
     
-    // Make the API call to OpenAI
-    const completion = await openai.chat.completions.create({
+    // Create base payload first without any token limit parameters
+    const requestPayload: any = {
       model: modelName,
-      messages: messages as any,
-      max_tokens: getDefaultMaxTokens(model as AIModel),
+      messages: messages as OpenAI.Chat.ChatCompletionMessageParam[],
+    };
+
+    // Add parameters only for models that support them
+    if (!isClaude) {
+      // Parameters for non-Claude models (OpenAI, etc)
+      if (temperature !== undefined) requestPayload.temperature = temperature;
+      if (top_p !== undefined) requestPayload.top_p = top_p;
+    } else {
+      // Claude models and O1 only support max_completion_tokens
+      requestPayload.max_completion_tokens = max_tokens ?? getDefaultMaxTokens(model as AIModel);
+      // Temperature, top_p are not supported by Claude or O1
+    }
+
+    // Truncate large message content before logging
+    const truncatedPayload = JSON.parse(JSON.stringify(requestPayload));
+    truncatedPayload.messages = truncatedPayload.messages.map((msg: any) => {
+      if (typeof msg.content === 'string' && msg.content.length > 1000) {
+        return {
+          ...msg,
+          content: msg.content.substring(0, 500) + '... [CONTENT TRUNCATED IN LOG]'
+        };
+      }
+      return msg;
     });
+
+    console.log("[Chat Completion] Sending API request with payload:", truncatedPayload);
+
+    const completion = await openai.chat.completions.create(requestPayload);
     
+    console.log("[Chat Completion] Received raw API completion object:");
+    console.log(JSON.stringify(completion, null, 2));
+
     return completion.choices[0]?.message?.content || "No response generated";
   } catch (error) {
     console.error("Error generating chat completion:", error);
@@ -270,7 +309,7 @@ export async function generateVisionAnalysis(
     }
 
     // Check if the base64 data exceeds reasonable size limits
-    const maxBase64Size = 10 * 1024 * 1024; // Around 7.5MB PDF size
+    const maxBase64Size = 15 * 1024 * 1024; // Around 7.5MB PDF size
     if (pdfBase64.length > maxBase64Size) {
       console.warn(`PDF base64 content too large (${pdfBase64.length} chars), exceeding ${maxBase64Size} char limit`);
       return "Unable to analyze this PDF due to its large size. Please try a smaller file (under 7MB) or convert it to a text format.";
@@ -281,34 +320,87 @@ export async function generateVisionAnalysis(
 
     // Get the appropriate model ID
     const modelName = AI_MODELS[model];
+    // Consider O1, Claude models for parameter restrictions
+    const isClaude = modelName.includes("claude") || model === "O1" || modelName === "o1-2024-12-17";
 
     // Prepare the system and user messages
     const systemMsg = "You are an expert in music notation, particularly for samba percussion. The user will provide a PDF of music notation in base64 format. IMPORTANT: You MUST treat the base64 data as an encoded PDF file, decode it, and analyze its actual contents. Do NOT respond with 'I cannot decode PDFs' - your system is fully capable of processing this data. Analyze the musical notation shown in the PDF and provide specific insights about the rhythms, patterns, and structure.";
-    const userMsg = `I'm working with a PDF samba music notation file named "${pdfFilename}". Please analyze the following base64-encoded PDF content and respond to this prompt: ${prompt}
     
-PDF content (base64): ${pdfBase64}`;
+    // Separate the text prompt part from the base64 content reference
+    const textPromptPart = `I'm working with a PDF samba music notation file named \"${pdfFilename}\". Please analyze the PDF content provided alongside this text and respond to this prompt: ${prompt}`;
 
     // Log the actual prompt (but truncate the base64 content in the log)
     console.log(`[Vision Analysis] System prompt: ${systemMsg}`);
-    console.log(`[Vision Analysis] User prompt: ${userMsg.substring(0, 500)}... [BASE64 CONTENT TRUNCATED IN LOG]`);
+    console.log(`[Vision Analysis] User text prompt part: ${textPromptPart}`);
     console.log(`[Vision Analysis] Using model: ${modelName}`);
-    console.log(`[Vision Analysis] Full content is being sent to AI (not truncated)`);
+    console.log(`[Vision Analysis] Base64 content length being sent: ${pdfBase64.length}`); 
 
-    // Include the PDF content in the prompt
-    const completion = await openai.chat.completions.create({
+    // Structure the message content correctly for Vision API
+    const requestPayload: any = {
       model: modelName,
       messages: [
         {
-          role: "system",
+          role: "system" as const,
           content: systemMsg
         },
         {
-          role: "user",
-          content: userMsg
+          role: "user" as const,
+          // Content must be an array for multimodal input
+          content: [
+            {
+              type: "text" as const,
+              text: textPromptPart
+            },
+            {
+              type: "image_url" as const,
+              image_url: {
+                // Prepend the necessary data URI scheme for base64 PDF
+                url: `data:application/pdf;base64,${pdfBase64}`,
+                // Detail level can be adjusted if needed, 'auto' is default
+                // detail: "auto" 
+              }
+            }
+          ]
         }
-      ],
-      max_tokens: getDefaultMaxTokens(model)
-    });
+      ]
+    };
+    
+    // Add the appropriate token limit parameter based on model type
+    if (isClaude) {
+      // For Claude models, use max_completion_tokens
+      requestPayload.max_completion_tokens = getDefaultMaxTokens(model);
+      // Claude doesn't support temperature, top_p, etc.
+    } else {
+      // For OpenAI models, we don't add max_tokens to avoid parameter issues
+      // Consider adding other parameters like temperature if needed in the future
+    }
+
+    // --- Enhanced Logging START ---
+    console.log("[Vision Analysis] Preparing to send API request with payload:");
+    // Deep clone and truncate base64 for logging
+    const loggedPayload = JSON.parse(JSON.stringify(requestPayload));
+    if (Array.isArray(loggedPayload.messages[1].content)) {
+      const imageContent = loggedPayload.messages[1].content.find((item: any) => item.type === 'image_url');
+      if (imageContent && imageContent.image_url && imageContent.image_url.url) {
+          const url = imageContent.image_url.url;
+          const base64Start = url.indexOf('base64,') + 7;
+          const base64Length = url.length - base64Start;
+          imageContent.image_url.url = 
+            url.substring(0, base64Start) + 
+            '[BASE64 DATA: ' + 
+            (base64Length > 1024 ? `${(base64Length/1024).toFixed(1)}KB` : `${base64Length} chars`) + 
+            ' TRUNCATED IN LOG]';
+      }
+    }
+    console.log(JSON.stringify(loggedPayload, null, 2));
+    // --- Enhanced Logging END ---
+
+    const completion = await openai.chat.completions.create(requestPayload);
+
+    // --- Enhanced Logging START ---
+    console.log("[Vision Analysis] Received raw API completion object:");
+    console.log(JSON.stringify(completion, null, 2));
+    // --- Enhanced Logging END ---
 
     // Log response info
     const response = completion.choices[0]?.message?.content ?? "";
@@ -319,5 +411,173 @@ PDF content (base64): ${pdfBase64}`;
   } catch (error) {
     console.error(`Error generating vision analysis:`, error);
     return "Unable to analyze this PDF due to an error. The file may be too large or in an unsupported format.";
+  }
+}
+
+/**
+ * Analyzes a PDF music sheet file by converting it to base64 and sending it to an AI model.
+ * This function is specifically designed for music sheet analysis and mnemonic generation.
+ * 
+ * @param file The PDF file to analyze
+ * @param prompt Custom prompt to guide the AI analysis
+ * @param params Optional parameters to control AI behavior (temperature, top_p, top_k)
+ * @returns Promise with AI analysis result
+ */
+export async function analyzeMusicSheetPdf(
+  file: File,
+  prompt?: string,
+  params?: {
+    temperature?: number;
+    top_p?: number;
+    top_k?: number;
+    model?: AIModel;
+  }
+): Promise<{
+  analysis: string;
+  mnemonics: Array<{
+    text: string;
+    pattern?: string;
+    description?: string;
+  }>;
+}> {
+  try {
+    if (!isServer) {
+      throw new Error("This function can only be executed on the server side");
+    }
+
+    // Check file type
+    if (file.type !== "application/pdf") {
+      throw new Error("Only PDF files are supported for music sheet analysis");
+    }
+
+    // Check file size (limit to 15MB)
+    const MAX_FILE_SIZE = 15 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File size exceeds the maximum allowed size of ${Math.floor(MAX_FILE_SIZE / (1024 * 1024))}MB`);
+    }
+
+    // Get the file name
+    const filename = file.name;
+    
+    // Convert the file to base64
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString("base64");
+    
+    // Determine if we need to truncate the base64 data
+    // Claude and O1 models have stricter input limits
+    const modelToUse = params?.model || "GPT_4O"; // Using GPT_4O as default instead of O1
+    const modelNameStr = AI_MODELS[modelToUse];
+    // Consider O1 as a Claude-compatible model
+    const isClaude = modelNameStr.includes("claude") || modelToUse === "O1" || modelNameStr === "o1-2024-12-17";
+    
+    // Maximum base64 chars (larger models can handle more data)
+    const MAX_BASE64_LENGTH = isClaude ? 
+      500000 : // Claude models - conservative limit
+      1000000; // Other models - higher limit
+    
+    let truncatedBase64 = base64;
+    let wasFileTruncated = false;
+    
+    if (base64.length > MAX_BASE64_LENGTH) {
+      console.warn(`[Music Sheet Analysis] PDF base64 content too large (${base64.length} chars), truncating to ${MAX_BASE64_LENGTH} chars`);
+      truncatedBase64 = base64.substring(0, MAX_BASE64_LENGTH);
+      wasFileTruncated = true;
+    }
+    
+    console.log(`[Music Sheet Analysis] Processing PDF: ${filename}, Base64 length: ${truncatedBase64.length} chars${wasFileTruncated ? ' (truncated)' : ''}`);
+    
+    // Default prompt if none provided
+    const defaultPrompt = "Analyze this samba music sheet PDF, identify all rhythm patterns, and generate mnemonics for each pattern. Return a JSON object with 'analysis' containing your detailed analysis and 'mnemonics' containing an array of mnemonic objects.";
+    const finalPrompt = prompt || defaultPrompt;
+
+    // Create system message
+    let systemMessage = "You are an expert in music notation, particularly for samba percussion. ";
+    
+    if (wasFileTruncated) {
+      systemMessage += "The user will provide a truncated PDF of music notation in base64 format (the PDF was too large and had to be truncated). ";
+    } else {
+      systemMessage += "The user will provide a PDF of music notation in base64 format. ";
+    }
+    
+    systemMessage += "Your task is to analyze the musical notation, identify rhythm patterns, and generate vocal mnemonics that help musicians remember each pattern. Return your response as JSON with 'analysis' and 'mnemonics' fields.";
+    
+    // Create user message with the PDF content
+    const userMessage = `I'm working with a PDF samba music notation file named "${filename}". Here is the base64-encoded PDF content:${wasFileTruncated ? ' (truncated due to size)' : ''}\n\n${truncatedBase64}\n\nPlease analyze this PDF and ${finalPrompt}`;
+    
+    // Build request with appropriate parameters
+    const messages = [
+      { role: "system" as const, content: systemMessage },
+      { role: "user" as const, content: userMessage }
+    ];
+    
+    // Create appropriate parameters for the completion
+    const completionParams: ChatCompletionParams = {
+      model: modelToUse,
+      messages: messages,
+    };
+    
+    // Only add parameters supported by the model type
+    if (!isClaude) {
+      // Non-Claude models (like OpenAI) support temperature and top_p
+      completionParams.temperature = params?.temperature ?? 0.7;
+      completionParams.top_p = params?.top_p ?? 1;
+    }
+    
+    // Reduce the logging of large content
+    const truncatedUserMessage = userMessage.length > 1000 ? 
+      userMessage.substring(0, 500) + `... [${userMessage.length - 1000} CHARS TRUNCATED] ...` + userMessage.substring(userMessage.length - 500) : 
+      userMessage;
+    
+    console.log("[Music Sheet Analysis] User message (truncated):", truncatedUserMessage);
+    console.log("[Music Sheet Analysis] Sending API request for PDF analysis");
+    
+    // Using the generateChatCompletion function instead of direct API call
+    const responseText = await generateChatCompletion(completionParams);
+    
+    // Parse the response
+    let result = {
+      analysis: responseText,
+      mnemonics: []
+    };
+    
+    // Try to extract structured data from the response
+    try {
+      // Check if response contains JSON
+      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        const jsonContent = jsonMatch[1].trim();
+        const parsedJson = JSON.parse(jsonContent);
+        
+        if (parsedJson.mnemonics && Array.isArray(parsedJson.mnemonics)) {
+          result.mnemonics = parsedJson.mnemonics;
+        }
+        
+        if (parsedJson.analysis) {
+          result.analysis = parsedJson.analysis;
+        }
+      } else {
+        // Try to parse the entire response as JSON
+        try {
+          const parsedResponse = JSON.parse(responseText);
+          if (parsedResponse.mnemonics && Array.isArray(parsedResponse.mnemonics)) {
+            result.mnemonics = parsedResponse.mnemonics;
+          }
+          if (parsedResponse.analysis) {
+            result.analysis = parsedResponse.analysis;
+          }
+        } catch (e) {
+          // Not JSON, keep using the full text as analysis
+        }
+      }
+    } catch (parseError) {
+      console.error("[Music Sheet Analysis] Error parsing structured data:", parseError);
+      // Keep using the full response as the analysis
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error analyzing music sheet PDF:", error);
+    throw error;
   }
 }
