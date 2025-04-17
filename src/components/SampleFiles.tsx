@@ -19,16 +19,15 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   const sampleFiles: SampleFile[] = [
-
     {
       id: "aainjaa",
       title: "Aainjaa",
       filename: "Aainjaa.pdf"
     },    
     {
-        id: "bossa2",
-        title: "Mangueira",
-        filename: "Mangueira.pdf"
+      id: "bossa2",
+      title: "Mangueira",
+      filename: "Mangueira.pdf"
     },
     {
       id: "sambaDaMusa",
@@ -44,16 +43,86 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
       setIsProcessing(file.id);
       toast.info(`AI is analyzing ${file.title}...`);
       
+      // First try Claude analysis
+      try {
+        // Get the URL for the API to process
+        const fileUrl = `/api/uploads/${file.filename}`;
+        
+        // If the file doesn't exist in uploads folder, use samples folder
+        const sampleUrl = `/samples/${file.filename}`;
+        
+        // Prepare prompt for Claude
+        const prompt = "Analyze this samba music sheet PDF. Identify all rhythm patterns, breaks, and sections. Provide a detailed analysis of the notation and generate vocal mnemonics for each rhythm pattern. Format your response in a clear, structured way.";
+        
+        console.log("[SampleFiles] Processing with Claude:", fileUrl);
+        
+        // Use our Claude API endpoint
+        const claudeResponse = await fetch("/api/parse-pdf", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pdfUrl: fileUrl,
+            prompt: prompt,
+          }),
+        });
+        
+        if (claudeResponse.ok) {
+          const claudeData = await claudeResponse.json();
+          console.log("[SampleFiles] Claude analysis successful:", claudeData);
+          
+          // Process Claude response into our expected format
+          let analysis = "";
+          
+          if (Array.isArray(claudeData.analysis)) {
+            claudeData.analysis.forEach((block: any) => {
+              if (block.type === "text") {
+                analysis += block.text;
+              }
+            });
+          } else if (typeof claudeData.analysis === 'string') {
+            analysis = claudeData.analysis;
+          } else {
+            analysis = JSON.stringify(claudeData.analysis);
+          }
+          
+          // Extract mnemonics from the analysis text
+          const mnemonics = extractMnemonicsFromText(analysis);
+          
+          const aiData: AiNotationData = {
+            filename: file.filename,
+            aiSummary: analysis,
+            mnemonics: mnemonics.length ? mnemonics : [
+              { text: "DUM ka DUM ka", pattern: "Basic Pattern", description: "Extracted from Claude analysis" }
+            ]
+          };
+          
+          if (onProcessComplete) {
+            onProcessComplete(aiData);
+          }
+          
+          toast.success(`${file.title} analyzed with Claude AI successfully`);
+          return; // Successfully processed with Claude
+        } else {
+          console.error("[SampleFiles] Claude analysis failed, will try fallback");
+        }
+      } catch (claudeError) {
+        console.error("[SampleFiles] Error with Claude analysis:", claudeError);
+        // Continue to fallback methods below
+      }
+      
+      // Fall back to the original methods if Claude fails
+      
       // Construct the URL for the sample file
       const sampleFileUrl = `/samples/${file.filename}`;
-      console.log("[SampleFiles] Processing sample file:", sampleFileUrl);
+      console.log("[SampleFiles] Falling back to original processing method for:", sampleFileUrl);
       
       // Try the API endpoint
       const apiUrl = "/api/process";
       console.log("[SampleFiles] Calling API endpoint:", apiUrl);
       
       const requestBody = { fileUrl: sampleFileUrl };
-      console.log("[SampleFiles] Request body:", JSON.stringify(requestBody));
       
       try {
         const response = await fetch(apiUrl, {
@@ -173,6 +242,86 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
     } finally {
       setIsProcessing(null);
     }
+  };
+
+  // Helper function to extract mnemonics from Claude's response text
+  const extractMnemonicsFromText = (text: string): Array<{text: string, pattern?: string, description?: string}> => {
+    const mnemonics = [];
+    
+    // Try to extract pattern-mnemonic pairs using regex
+    const patternRegex = /["']([^"']+)["']:\s*["']([^"']+)["']/g;
+    const matches = text.matchAll(patternRegex);
+    
+    for (const match of Array.from(matches)) {
+      if (match[1] && match[2]) {
+        mnemonics.push({
+          pattern: match[1].trim(),
+          text: match[2].trim(),
+          description: "Extracted from Claude analysis"
+        });
+      }
+    }
+    
+    // Look for mnemonic patterns like "DUM ka DUM ka"
+    const soundPatternRegex = /\b([A-Z]{2,}\s+[a-z]+(\s+[A-Z]{2,}\s+[a-z]+)+)\b/g;
+    const soundMatches = text.matchAll(soundPatternRegex);
+    
+    for (const match of Array.from(soundMatches)) {
+      if (match[1] && !mnemonics.some(m => m.text === match[1])) {
+        mnemonics.push({
+          text: match[1].trim(),
+          pattern: "Sound Pattern",
+          description: "Vocal pattern from analysis"
+        });
+      }
+    }
+    
+    // If we couldn't extract any mnemonics, check if there are sections starting with "Mnemonic"
+    if (mnemonics.length === 0) {
+      const lines = text.split('\n');
+      let currentPattern = '';
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Look for pattern names
+        if (line.toLowerCase().includes('pattern') || 
+            line.toLowerCase().includes('section') || 
+            line.toLowerCase().includes('break')) {
+          currentPattern = line.replace(/[:;.,]$/, '').trim();
+        }
+        
+        // Look for lines that appear to be mnemonics
+        if (line.match(/[A-Z]{2,}/) && 
+            line.match(/\b[a-z]+\b/) && 
+            !line.match(/^[a-z]/) && 
+            line.length < 50) {
+          mnemonics.push({
+            text: line,
+            pattern: currentPattern || "Rhythm Pattern",
+            description: "Identified vocal pattern"
+          });
+        }
+      }
+    }
+    
+    // If still empty, try to find any all-caps words that might be mnemonics
+    if (mnemonics.length === 0) {
+      const allCapsRegex = /\b([A-Z]{2,}([\s-][A-Z]{2,})*)\b/g;
+      const allCapsMatches = text.matchAll(allCapsRegex);
+      
+      for (const match of Array.from(allCapsMatches)) {
+        if (match[1] && match[1].length > 3) {
+          mnemonics.push({
+            text: match[1],
+            pattern: "Sound Pattern",
+            description: "Emphasized sound"
+          });
+        }
+      }
+    }
+    
+    return mnemonics;
   };
 
   return (

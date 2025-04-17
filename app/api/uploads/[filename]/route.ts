@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 // Content-type mapping based on file extensions
 const contentTypeMap: Record<string, string> = {
@@ -13,35 +13,40 @@ const contentTypeMap: Record<string, string> = {
   ".txt": "text/plain",
 };
 
-// Use a dynamic route handler that works with both Node.js and Edge runtime
-export async function GET(
+export function GET(
   request: NextRequest,
-  context: { params: { filename: string } }
+  { params }: { params: { filename: string } }
 ) {
-  const filename = context.params.filename;
-  
   try {
+    const filename = params.filename;
+    
     // Check that the filename is set
     if (!filename) {
-      return new Response("Filename is required", { status: 400 });
+      return NextResponse.json(
+        { error: "Filename is required" },
+        { status: 400 }
+      );
     }
     
     // Sanitize the filename to prevent directory traversal attacks
     const sanitizedFilename = filename.replace(/^.*[\\\/]/, '');
     
     // Get the full path to the file
-    const filePath = join(process.cwd(), "uploads", sanitizedFilename);
+    const filePath = path.join(process.cwd(), "uploads", sanitizedFilename);
     
-    // Read the file synchronously (for simplicity)
-    let fileBuffer;
-    try {
-      fileBuffer = readFileSync(filePath);
-    } catch (err) {
-      return new Response("File not found", { status: 404 });
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return NextResponse.json(
+        { error: "File not found" },
+        { status: 404 }
+      );
     }
     
+    // Read the file synchronously
+    const fileBuffer = fs.readFileSync(filePath);
+    
     // Get file extension to determine content type
-    const ext = (sanitizedFilename.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+    const ext = path.extname(sanitizedFilename).toLowerCase();
     const contentType = contentTypeMap[ext] || "application/octet-stream";
     
     // Create response with appropriate headers
@@ -54,6 +59,9 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error serving file:", error);
-    return new Response("Error serving file", { status: 500 });
+    return NextResponse.json(
+      { error: "Error serving file" },
+      { status: 500 }
+    );
   }
 } 
