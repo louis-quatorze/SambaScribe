@@ -55,6 +55,7 @@
 - Refactored PDF upload and sample files processing to exactly match the PDF parser implementation, using Claude 3.5 Sonnet with consistent error handling and response processing.
 - Fixed Claude PDF analysis error by modifying the parse-pdf API route to properly convert relative URLs to absolute URLs when fetching PDF files.
 - Implemented PDF upload functionality for the PDF Analyzer page, storing files in public/uploads for Anthropic AI analysis.
+- Fixed 'upgrade plan' button not linking to Stripe checkout by adding a GET handler to the checkout API route that uses one-time payment for premium access.
 
 # SambaScribe Updates
 
@@ -108,5 +109,7 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 - Fixed PDF processing with improved AI prompting and full base64 content handling to ensure AI properly analyzes the actual PDF content rather than just responding to filenames.
 
 - Made PDF Analyzer the homepage and simplified navigation by removing Dashboard, Samba PDFs, and Pricing links.
+
+- Set dark theme as the default UI theme by updating ThemeProvider configurations, adding dark class to HTML element, and updating global CSS to support better dark mode consistency across the application.
 
  

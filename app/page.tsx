@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Header } from "@/components/Header";
-import { LockIcon, FileText, UploadCloud, Loader2, Music } from "lucide-react";
+import { LockIcon, FileText, UploadCloud, Loader2, Music, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { api } from "@/lib/trpc/react";
@@ -118,151 +118,189 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-white dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col relative bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <Header />
 
-      <main className="flex-1 flex flex-col w-full mx-auto">
+      <main className="flex-1 px-4 py-6 md:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         <ClientProvider>
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <section className="max-w-7xl w-full space-y-8 animate-fade-in p-4 md:p-8">
-              <div className="text-center">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                  SambaScribe PDF Analyzer
-                </h1>
-                <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-                  Analyze PDF documents using AI. Select a sample or upload your own.
+          <div className="space-y-12">
+            {/* Hero Section */}
+            <section className="text-center py-8 md:py-12 px-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl">
+              <h1 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">
+                SambaScribe PDF Analyzer
+              </h1>
+              <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90">
+                Analyze PDF documents with AI to understand samba rhythms, patterns, and musical structures.
+              </p>
+              
+              <div className="mt-8 flex items-center justify-center space-x-4 text-lg">
+                <div className="flex items-center animate-pulse">
+                  <FileText className="w-6 h-6 mr-2" />
+                  <span>PDF</span>
+                </div>
+                <div className="text-2xl font-bold">→</div>
+                <div className="flex items-center">
+                  <Sparkles className="w-6 h-6 mr-2" />
+                  <span>AI</span>
+                </div>
+                <div className="text-2xl font-bold">→</div>
+                <div className="flex items-center animate-bounce">
+                  <Music className="w-6 h-6 mr-2" />
+                  <span>Music</span>
+                </div>
+              </div>
+            </section>
+            
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Sample PDFs Section */}
+              <div className="col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <FileText className="w-6 h-6 mr-2 text-blue-500" />
+                  Sample PDFs
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Try out our sample documents to see how SambaScribe works
                 </p>
+                <div className="grid grid-cols-1 gap-3">
+                  {sampleFiles.map((file) => (
+                    <button
+                      key={file.name}
+                      onClick={() => handleAnalyzePdf(file.filename, true)}
+                      disabled={isLoading || status !== "authenticated"}
+                      className="flex items-center p-4 border rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-left"
+                    >
+                      <FileText className="w-5 h-5 mr-3 text-blue-500 flex-shrink-0" />
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        {file.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {status === "unauthenticated" && (
+                  <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-4">
+                    Please sign in to analyze samples
+                  </p>
+                )}
               </div>
 
-              {/* Illustration Section */}
-              <div className="relative h-64 w-full rounded-xl overflow-hidden mb-8">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 opacity-80"></div>
-                <div className="absolute inset-0 flex items-center justify-center p-6">
-                  <div className="flex items-center space-x-4">
-                    <FileText className="w-16 h-16 text-white" />
-                    <div className="text-white text-3xl font-bold">→</div>
-                    <Music className="w-16 h-16 text-white" />
+              {/* Upload PDF Section */}
+              <div className="col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <UploadCloud className="w-6 h-6 mr-2 text-blue-500" />
+                  Upload PDF
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Upload your own PDF document for AI analysis
+                </p>
+                {status === "unauthenticated" ? (
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-800/30">
+                    <LockIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sign In Required</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Please sign in to upload and analyze your own PDF files.
+                    </p>
+                    <Link
+                      href="/api/auth/signin"
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Sign In
+                    </Link>
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                {/* Sample PDFs Section */}
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                    Analyze Sample PDFs
-                  </h2>
-                  <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Select one of our sample documents
-                      </p>
+                ) : isCheckingSubscription ? (
+                  <div className="flex justify-center items-center p-6 border rounded-lg bg-gray-50 dark:bg-gray-800/30">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    <span>Checking subscription status...</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {sampleFiles.map((file) => (
-                      <button
-                        key={file.name}
-                        onClick={() => handleAnalyzePdf(file.filename, true)}
-                        disabled={isLoading || status !== "authenticated"}
-                        className="flex flex-col items-center justify-center p-6 border rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <FileText className="w-10 h-10 mb-2 text-blue-500" />
-                        <span className="text-sm font-medium text-center text-gray-700 dark:text-gray-300">
-                          {file.name}
-                        </span>
-                      </button>
-                    ))}
+                ) : hasSubscription ? (
+                  <div>
+                    <PdfUpload 
+                      onUploadComplete={handleUploadComplete} 
+                      disabled={isLoading} 
+                    />
                   </div>
-                  {status === "unauthenticated" && (
-                      <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-3">Please sign in to analyze samples.</p>
-                  )}
-                </div>
-
-                {/* Upload PDF Section */}
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                      Upload Your PDF
-                  </h2>
-                  <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Upload your own PDF document
-                      </p>
+                ) : (
+                  // User is authenticated but no subscription
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-800/30">
+                    <LockIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Premium Feature</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Uploading your own files requires a premium subscription.
+                    </p>
+                    <Link
+                      href="/api/stripe/checkout"
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Upgrade to Premium
+                    </Link>
                   </div>
-                  {status === "unauthenticated" ? (
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-800/30">
-                      <LockIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" />
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sign In Required</h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">
-                        Please sign in to upload and analyze your own PDF files.
-                      </p>
-                      <Link
-                        href="/api/auth/signin"
-                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Sign In
-                      </Link>
-                    </div>
-                  ) : isCheckingSubscription ? (
-                    <div className="flex justify-center items-center p-6 border rounded-lg bg-gray-50 dark:bg-gray-800/30">
-                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                      <span>Checking subscription status...</span>
-                    </div>
-                  ) : hasSubscription ? (
-                    <div>
-                      <PdfUpload 
-                        onUploadComplete={handleUploadComplete} 
-                        disabled={isLoading} 
-                      />
-                    </div>
-                  ) : (
-                    // User is authenticated but no subscription
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-800/30">
-                      <LockIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" />
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Premium Feature</h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">
-                        Uploading your own files requires a premium subscription.
-                      </p>
-                      <Link
-                        href="/api/stripe/subscription"
-                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Upgrade to Premium
-                      </Link>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
 
               {/* Subscription Manager Section */} 
-              {status === "authenticated" && (
-                <div className="w-full mt-8 mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                    Your Subscription
-                  </h2>
-                  <SubscriptionManager />
-                </div>
-              )}
-
-              {/* AI Analysis Results Section */}
-              {(isLoading || analysisResult) && (
-                <div ref={resultsRef} className="w-full transition-all duration-300 animate-fade-in mt-8 space-y-4">
-                  <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6">
-                    AI Analysis Results {analyzedFilename ? `for ${analyzedFilename}` : ''}
-                  </h2>
-                  <div className="p-6 border rounded-lg bg-white dark:bg-gray-800 shadow-md min-h-[150px]">
-                    {isLoading ? (
-                      <div className="flex justify-center items-center h-full py-10">
-                        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                        <span className="ml-3 text-lg text-gray-600 dark:text-gray-400">Analyzing PDF... Please wait.</span>
+              <div className="col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <Sparkles className="w-6 h-6 mr-2 text-blue-500" />
+                  {status === "authenticated" ? "Your Subscription" : "Get Premium"}
+                </h2>
+                {status === "authenticated" ? (
+                  <>
+                    <SubscriptionManager />
+                    {!hasSubscription && (
+                      <div className="mt-4 text-center">
+                        <Link
+                          href="/api/stripe/checkout"
+                          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Upgrade to Premium
+                        </Link>
                       </div>
-                    ) : analysisResult ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-                        {analysisResult}
-                      </div>
-                    ) : null}
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center p-4">
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                      Sign in to manage your subscription or upgrade to premium for full access.
+                    </p>
+                    <Link
+                      href="/api/auth/signin"
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Sign In
+                    </Link>
                   </div>
-                </div>
-              )}
-            </section>
+                )}
+              </div>
+            </div>
+
+            {/* AI Analysis Results Section */}
+            {(isLoading || analysisResult) && (
+              <div 
+                ref={resultsRef} 
+                className="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-all duration-300 animate-fade-in mt-8 space-y-4"
+              >
+                <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6 flex items-center justify-center">
+                  <Music className="w-8 h-8 mr-3 text-blue-500" />
+                  Analysis Results {analyzedFilename ? `for ${analyzedFilename}` : ''}
+                </h2>
+                
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center p-12">
+                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+                    <p className="text-xl text-gray-600 dark:text-gray-400">
+                      Analyzing your PDF with AI...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="prose dark:prose-invert max-w-none">
+                    {analysisResult && (
+                      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg" dangerouslySetInnerHTML={{ __html: analysisResult }} />
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </ClientProvider>
       </main>

@@ -3,6 +3,38 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createCheckoutSession, createOneTimeCheckoutSession } from "@/lib/services/stripe";
 
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const userEmail = session.user.email || undefined;
+    const userName = session.user.name || undefined;
+    
+    // Use the one-time payment for premium_weekly instead of subscription
+    const checkoutSession = await createOneTimeCheckoutSession(
+      userId, 
+      'premium_weekly',
+      userEmail,
+      userName
+    );
+
+    if (!checkoutSession.url) {
+      return new NextResponse("Failed to generate checkout URL", { status: 500 });
+    }
+
+    return NextResponse.redirect(checkoutSession.url);
+  } catch (error) {
+    console.error("Error creating checkout session:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+    return new NextResponse(`Error: ${errorMessage}`, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);

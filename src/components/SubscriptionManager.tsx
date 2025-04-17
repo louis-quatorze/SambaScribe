@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-toastify';
-import { Loader2, CreditCard, RefreshCw, AlertCircle } from 'lucide-react';
+import { Loader2, CreditCard, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
 import { refreshSession } from '@/lib/utils/session';
+import Link from 'next/link';
 
 interface Subscription {
   id: string;
@@ -106,7 +107,7 @@ export function SubscriptionManager() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-lg">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" />
         <p className="text-gray-600 dark:text-gray-400">Loading subscription information...</p>
       </div>
@@ -115,12 +116,10 @@ export function SubscriptionManager() {
 
   if (!subscription) {
     return (
-      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Subscription</h2>
-        
-        <div className="flex items-start space-x-4 mb-6">
+      <div className="rounded-lg">
+        <div className="flex items-start space-x-4 mb-4">
           <div className="flex-shrink-0">
-            <CreditCard className="w-8 h-8 text-gray-400" />
+            <CreditCard className="w-6 h-6 text-gray-400" />
           </div>
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">No active subscription</h3>
@@ -134,24 +133,23 @@ export function SubscriptionManager() {
         </div>
         
         {!hasAccess && (
-          <button
-            onClick={handleSubscribe}
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          <Link
+            href="/api/stripe/checkout"
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
           >
+            <Sparkles className="w-4 h-4 mr-2" />
             Upgrade to Premium
-          </button>
+          </Link>
         )}
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Your Subscription</h2>
-      
-      <div className="flex items-start space-x-4 mb-6">
+    <div className="rounded-lg">
+      <div className="flex items-start space-x-4 mb-4">
         <div className="flex-shrink-0">
-          <CreditCard className="w-8 h-8 text-blue-500" />
+          <CreditCard className="w-6 h-6 text-blue-500" />
         </div>
         <div className="flex-grow">
           <div className="flex justify-between items-start">
@@ -185,9 +183,9 @@ export function SubscriptionManager() {
         </div>
       </div>
       
-      {/* Only show manage button for recurring subscriptions */}
-      {!subscription.stripeSubscriptionId.startsWith('one_time_') && (
-        <div className="space-y-3">
+      <div className="space-y-3">
+        {/* Only show manage button for recurring subscriptions */}
+        {!subscription.stripeSubscriptionId.startsWith('one_time_') ? (
           <button
             onClick={handleManageSubscription}
             disabled={isManaging}
@@ -205,8 +203,16 @@ export function SubscriptionManager() {
               </>
             )}
           </button>
-        </div>
-      )}
+        ) : (
+          <Link
+            href="/api/stripe/checkout"
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Upgrade Plan
+          </Link>
+        )}
+      </div>
     </div>
   );
 } 

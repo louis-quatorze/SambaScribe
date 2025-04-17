@@ -2,22 +2,27 @@ import fs from "fs";
 import path from "path";
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 
-// Define the files route metadata
-export const metadata = {
+export const metadata: Metadata = {
   title: "File Viewer",
   description: "View uploaded files",
 };
 
 // Generate static paths for the files that exist at build time
-export function generateStaticParams() {
+export async function generateStaticParams() {
   // This would typically list all files in the uploads directory
   // but for performance in large directories, we'll return an empty array
   // and let the page handle the file lookup at request time
   return [];
 }
 
-export default function FilePage({ params }: { params: { filename: string } }) {
+type Props = {
+  params: { filename: string }
+}
+
+// Use a Server Component to handle this page
+export default async function FilePage({ params }: Props) {
   const { filename } = params;
   
   // Sanitize the filename to prevent directory traversal attacks
@@ -27,7 +32,16 @@ export default function FilePage({ params }: { params: { filename: string } }) {
   const filePath = path.join(process.cwd(), "uploads", sanitizedFilename);
   
   // Check if the file exists
-  if (!fs.existsSync(filePath)) {
+  try {
+    const fileExists = await fs.promises.access(filePath)
+      .then(() => true)
+      .catch(() => false);
+      
+    if (!fileExists) {
+      notFound();
+    }
+  } catch (error) {
+    console.error('Error checking file:', error);
     notFound();
   }
   
