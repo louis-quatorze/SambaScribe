@@ -48,6 +48,7 @@
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ChatCompletionMessage } from "openai/resources/chat/completions";
+import Anthropic from "@anthropic-ai/sdk";
 
 // This ensures the file only runs on the server side
 const isServer = typeof window === 'undefined';
@@ -60,6 +61,7 @@ interface GeminiGroundedResponse {
 
 type AIClientType = {
   openai: OpenAI;
+  anthropic: Anthropic;
 };
 
 type AIClientResponse = {
@@ -68,7 +70,7 @@ type AIClientResponse = {
 };
 
 export const AI_MODELS = {
-  SONNET: "claude-3-5-sonnet-20241022",
+  SONNET: "claude-3-sonnet-20240229",
   O1: "o1-2024-12-17",
   GPT_4O: "gpt-4o",
   GPT_4O_MINI: "gpt-4o-mini",
@@ -84,6 +86,7 @@ export type AIModel = keyof typeof AI_MODELS;
 let openai: OpenAI | null = null;
 let perplexity: OpenAI | null = null;
 let genAI: any = null;
+let anthropic: Anthropic | null = null;
 
 if (isServer) {
   openai = new OpenAI({
@@ -96,6 +99,10 @@ if (isServer) {
   });
 
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+  
+  anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
 }
 
 function getClientForModel(model: AIModel): AIClientResponse {
@@ -107,6 +114,10 @@ function getClientForModel(model: AIModel): AIClientResponse {
 
   if (modelId.includes("sonar")) {
     return { client: perplexity as OpenAI, type: "openai" };
+  }
+  
+  if (modelId.includes("claude")) {
+    return { client: anthropic as Anthropic, type: "anthropic" };
   }
 
   return { client: openai as OpenAI, type: "openai" };
@@ -203,14 +214,79 @@ export async function generateChatCompletion(params: ChatCompletionParams): Prom
        top_p,
     } = params;
     
+    const modelName = AI_MODELS[model as AIModel] || "gpt-4o";
+    const isClaude = modelName.includes("claude");
+    
+    // If this is a Claude model and we have the Anthropic client initialized
+    if (isClaude && anthropic) {
+      console.log("[Chat Completion] Using Anthropic API for Claude model:", modelName);
+      
+      // Convert the messages format for Anthropic
+      const systemMessage = messages.find(m => m.role === 'system')?.content || "";
+      const userAssistantMessages = messages.filter(m => m.role !== 'system');
+      
+      // Create the Anthropic message format
+      const anthropicMessages = userAssistantMessages.map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content
+      }));
+      
+      // Create request payload
+      const requestPayload: Anthropic.MessageCreateParams = {
+        model: modelName,
+        messages: anthropicMessages as any,
+        max_tokens: max_tokens ?? getDefaultMaxTokens('SONNET'),
+        system: systemMessage
+      };
+      
+      // Add temperature if provided and valid for Anthropic
+      if (temperature !== undefined) {
+        requestPayload.temperature = temperature;
+      }
+      
+      // Add top_p if provided and valid for Anthropic 
+      if (top_p !== undefined) {
+        requestPayload.top_p = top_p;
+      }
+      
+      // Log with limited content for large messages
+      const truncatedPayload = JSON.parse(JSON.stringify(requestPayload));
+      if (truncatedPayload.messages) {
+        truncatedPayload.messages = truncatedPayload.messages.map((msg: any) => {
+          if (typeof msg.content === 'string' && msg.content.length > 1000) {
+            return {
+              ...msg,
+              content: msg.content.substring(0, 500) + '... [CONTENT TRUNCATED IN LOG]'
+            };
+          }
+          return msg;
+        });
+      }
+      
+      console.log("[Chat Completion] Sending Anthropic API request with payload:", truncatedPayload);
+      
+      // Make the API call
+      const response = await anthropic.messages.create(requestPayload);
+      
+      console.log("[Chat Completion] Received Anthropic API response:", response);
+      
+      // Handle text content from Anthropic response
+      if (response.content?.[0]?.type === 'text') {
+        return response.content[0].text;
+      }
+      
+      // If not text type, return empty string or any fallback
+      return "No text content in the response";
+    }
+    
+    // For non-Claude models, use the existing OpenAI call path
     if (!openai) {
       console.warn("OpenAI client not initialized, returning mock response");
       return "This is a mock AI response";
     }
     
-    const modelName = AI_MODELS[model as AIModel] || "gpt-4o";
-    // Consider O1 as a Claude-compatible model - it has the same parameter restrictions
-    const isClaude = modelName.includes("claude") || model === "O1" || modelName === "o1-2024-12-17";
+    // Consider O1 as having the same parameter restrictions as Claude
+    const isO1 = model === "O1" || modelName === "o1-2024-12-17";
     
     // Create base payload first without any token limit parameters
     const requestPayload: any = {
@@ -219,14 +295,13 @@ export async function generateChatCompletion(params: ChatCompletionParams): Prom
     };
 
     // Add parameters only for models that support them
-    if (!isClaude) {
-      // Parameters for non-Claude models (OpenAI, etc)
+    if (!isO1) {
+      // Parameters for standard OpenAI models
       if (temperature !== undefined) requestPayload.temperature = temperature;
       if (top_p !== undefined) requestPayload.top_p = top_p;
     } else {
-      // Claude models and O1 only support max_completion_tokens
-      requestPayload.max_completion_tokens = max_tokens ?? getDefaultMaxTokens(model as AIModel);
-      // Temperature, top_p are not supported by Claude or O1
+      // O1 only supports max_tokens
+      requestPayload.max_tokens = max_tokens ?? getDefaultMaxTokens(model as AIModel);
     }
 
     // Truncate large message content before logging
@@ -241,7 +316,7 @@ export async function generateChatCompletion(params: ChatCompletionParams): Prom
       return msg;
     });
 
-    console.log("[Chat Completion] Sending API request with payload:", truncatedPayload);
+    console.log("[Chat Completion] Sending OpenAI API request with payload:", truncatedPayload);
 
     const completion = await openai.chat.completions.create(requestPayload);
     
@@ -465,13 +540,13 @@ export async function analyzeMusicSheetPdf(
     const base64 = buffer.toString("base64");
     
     // Determine if we need to truncate the base64 data
-    // Claude and O1 models have stricter input limits
-    const modelToUse = params?.model || "GPT_4O"; // Using GPT_4O as default instead of O1
+    // Claude models have stricter input limits than OpenAI models
+    const modelToUse = params?.model || "SONNET"; // Using Claude Sonnet as default
     const modelNameStr = AI_MODELS[modelToUse];
-    // Consider O1 as a Claude-compatible model
-    const isClaude = modelNameStr.includes("claude") || modelToUse === "O1" || modelNameStr === "o1-2024-12-17";
+    // Check if this is a Claude model
+    const isClaude = modelNameStr.includes("claude");
     
-    // Maximum base64 chars (larger models can handle more data)
+    // Maximum base64 chars (Claude models have stricter limits)
     const MAX_BASE64_LENGTH = isClaude ? 
       500000 : // Claude models - conservative limit
       1000000; // Other models - higher limit
@@ -488,7 +563,8 @@ export async function analyzeMusicSheetPdf(
     console.log(`[Music Sheet Analysis] Processing PDF: ${filename}, Base64 length: ${truncatedBase64.length} chars${wasFileTruncated ? ' (truncated)' : ''}`);
     
     // Default prompt if none provided
-    const defaultPrompt = "Analyze this samba music sheet PDF, identify all rhythm patterns, and generate mnemonics for each pattern. Return a JSON object with 'analysis' containing your detailed analysis and 'mnemonics' containing an array of mnemonic objects.";
+    const defaultPrompt = "Analyze this samba music sheet PDF, identify all rhythm patterns, and generate mnemonics for each pattern. Please load all the captions, and section names from the file. Return a JSON object with 'analysis' containing your detailed analysis with the section names and 'mnemonics' containing an array of mnemonic objects.";
+    
     const finalPrompt = prompt || defaultPrompt;
 
     // Create system message

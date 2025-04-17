@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const temperature = formData.get("temperature") ? parseFloat(formData.get("temperature") as string) : undefined;
     const top_p = formData.get("top_p") ? parseFloat(formData.get("top_p") as string) : undefined;
     const top_k = formData.get("top_k") ? parseInt(formData.get("top_k") as string) : undefined;
-    const model = formData.get("model") as string || "GPT_4O";
+    const model = formData.get("model") as string || "SONNET";
 
     if (!file) {
       console.error("[/api/analyze-sheet] No file provided in request");
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       filename: file.name,
       aiSummary: result.analysis,
       mnemonics: result.mnemonics,
+      labels: [], // Empty array as labels is not part of the result
     };
 
     console.log("[/api/analyze-sheet] Analysis complete, returning results");
