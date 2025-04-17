@@ -1,0 +1,5 @@
+[33mcommit fada454a53ed49b1456dd8871bd10166069c4c8c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Louis XIV <larivierlouise@gmail.com>
+Date:   Wed Apr 16 14:31:18 2025 -0700
+
+    Enhanced music sheet analysis: added loading spinner, improved PDF processing, and label extraction
