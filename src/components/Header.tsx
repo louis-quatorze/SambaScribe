@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, LogIn, LogOut, User, Home, Info, CreditCard, ChevronDown, FileText } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, Home, ChevronDown } from "lucide-react";
 
 export function Header() {
   const { data: session, status } = useSession();
@@ -46,24 +46,6 @@ export function Header() {
       <div className="hidden md:flex items-center gap-4">
         {status === "authenticated" && session?.user ? (
           <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/samba-pdf-samples"
-              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Samba PDFs
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Pricing
-            </Link>
             <div 
               className="relative" 
               ref={userMenuRef}
@@ -96,20 +78,8 @@ export function Header() {
           </div>
         ) : (
           <div className="flex items-center gap-4">
-            <Link
-              href="/samba-pdf-samples"
-              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Samba PDFs
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Pricing
-            </Link>
             <Link 
-              href="/auth/signin" 
+              href="/api/auth/signin" 
               className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
             >
               <LogIn className="h-4 w-4" />
@@ -145,32 +115,8 @@ export function Header() {
               <Home className="h-4 w-4" />
               Home
             </Link>
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <User className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <Link
-              href="/samba-pdf-samples"
-              className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <FileText className="h-4 w-4" />
-              Samba PDFs
-            </Link>
-            <Link
-              href="/pricing"
-              className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <CreditCard className="h-4 w-4" />
-              Pricing
-            </Link>
             
-            {status === "authenticated" && session?.user ? (
+            {status === "authenticated" ? (
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -183,7 +129,7 @@ export function Header() {
               </button>
             ) : (
               <Link
-                href="/auth/signin"
+                href="/api/auth/signin"
                 className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >

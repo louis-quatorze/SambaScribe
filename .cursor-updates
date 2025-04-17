@@ -107,4 +107,6 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 
 - Fixed PDF processing with improved AI prompting and full base64 content handling to ensure AI properly analyzes the actual PDF content rather than just responding to filenames.
 
+- Made PDF Analyzer the homepage and simplified navigation by removing Dashboard, Samba PDFs, and Pricing links.
+
  
