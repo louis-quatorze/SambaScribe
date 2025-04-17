@@ -56,6 +56,10 @@
 - Fixed Claude PDF analysis error by modifying the parse-pdf API route to properly convert relative URLs to absolute URLs when fetching PDF files.
 - Implemented PDF upload functionality for the PDF Analyzer page, storing files in public/uploads for Anthropic AI analysis.
 - Fixed 'upgrade plan' button not linking to Stripe checkout by adding a GET handler to the checkout API route that uses one-time payment for premium access.
+- Improved homepage layout with multiple fluid columns, better spacing, and mobile responsiveness. Removed gradient background, added curved buttons for sample files, aligned content boxes, and adjusted borders.
+- Enhanced homepage by adding Samba Rhythm Illustration image next to the sample PDFs with responsive layout, hover effects, and image caption for better visual appeal.
+- Updated sample PDFs functionality to allow analysis without login, providing a preview experience to non-authenticated users while encouraging sign-up for full features.
+- Fixed backend authentication error by modifying the PDF analyzer tRPC route to use publicProcedure instead of protectedProcedure, with conditional authentication that allows sample PDFs to be analyzed by anonymous users.
 
 # SambaScribe Updates
 
@@ -111,11 +115,5 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 - Made PDF Analyzer the homepage and simplified navigation by removing Dashboard, Samba PDFs, and Pricing links.
 
 - Set dark theme as the default UI theme by updating ThemeProvider configurations, adding dark class to HTML element, and updating global CSS to support better dark mode consistency across the application.
-
-- Improved homepage layout with multiple fluid columns, better spacing, and mobile responsiveness. Removed gradient background, added curved buttons for sample files, aligned content boxes, and adjusted borders.
-
-- Enhanced homepage by adding Samba Rhythm Illustration image next to the sample PDFs with responsive layout, hover effects, and image caption for better visual appeal.
-
-- Updated sample PDFs functionality to allow analysis without login, providing a preview experience to non-authenticated users while encouraging sign-up for full features.
 
  

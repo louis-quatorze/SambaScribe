@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure } from '@/lib/api/trpc';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/lib/api/trpc';
 // import { generateChatCompletion } from '@/lib/aiClient'; // No longer using this
 import Anthropic from "@anthropic-ai/sdk"; // Added Anthropic SDK
 import fetch from "node-fetch"; // Added node-fetch for fetching PDF
@@ -15,10 +15,23 @@ function getBaseUrl() {
     if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
     // Assume localhost for development if not on Vercel
     return `http://localhost:${process.env.PORT ?? 3000}`;
-  }
+}
+
+// Function to check if a URL is for a sample PDF
+function isSamplePdf(url: string): boolean {
+  // Extract the filename from the URL
+  const urlParts = url.split('/');
+  const filename = urlParts[urlParts.length - 1];
+  
+  // List of sample PDF filenames
+  const sampleFilenames = ["Aainjaa.pdf", "Mangueira.pdf", "Samba-Da-Musa.pdf"];
+  
+  // Check if the filename is in the list of sample PDFs
+  return sampleFilenames.includes(filename);
+}
 
 export const pdfAnalyzerRouter = createTRPCRouter({
-  analyzePdf: protectedProcedure
+  analyzePdf: publicProcedure
     .input(
       z.object({
         pdfUrl: z.string().url({ message: 'Invalid PDF URL provided.' }),
@@ -27,7 +40,18 @@ export const pdfAnalyzerRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { pdfUrl, prompt } = input;
-      const userId = ctx.session.user.id;
+      
+      // Check if this is a sample PDF or if the user is authenticated
+      const isSample = isSamplePdf(pdfUrl);
+      if (!isSample && (!ctx.session || !ctx.session.user)) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Authentication required to analyze non-sample PDFs",
+        });
+      }
+      
+      // Get user ID if authenticated, or use 'anonymous' for sample PDFs
+      const userId = ctx.session?.user?.id || 'anonymous';
 
       if (!process.env.ANTHROPIC_API_KEY) {
           throw new TRPCError({

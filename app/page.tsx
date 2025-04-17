@@ -10,7 +10,6 @@ import { api } from "@/lib/trpc/react";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { PdfUpload } from "@/components/PdfUpload";
 import ClientProvider from "@/components/ClientProvider";
-import Image from "next/image";
 
 // Define sample PDFs from the /samples/ directory
 const sampleFiles = [
@@ -81,12 +80,10 @@ export default function HomePage() {
   };
 
   const handleAnalyzePdf = (filename: string, isSample: boolean) => {
-    // Allow sample PDFs to be analyzed without authentication
-    if (!isSample && status !== "authenticated") {
-      toast.error("Please sign in to analyze your uploaded PDFs.");
+    if (status !== "authenticated") {
+      toast.error("Please sign in to analyze PDFs.");
       return;
     }
-
     // Construct URL differently for samples vs uploads if needed
     const pdfUrl = isSample ? getSamplePdfUrl(filename) : filename;
 
@@ -98,20 +95,7 @@ export default function HomePage() {
     setIsLoading(true);
     setAnalysisResult(null);
     setAnalyzedFilename(null); // Clear previous filename
-    
-    // If it's a sample and user is not authenticated, we'll still show analysis but with a prompt to sign in for more
-    if (isSample && status !== "authenticated") {
-      analyzePdfMutation.mutate({ 
-        pdfUrl, 
-        prompt: `Analyze sample PDF: ${decodeURIComponent(filename)} (limited preview)` 
-      });
-      toast.info("Sign in for full analysis capabilities.");
-    } else {
-      analyzePdfMutation.mutate({ 
-        pdfUrl, 
-        prompt: `Analyze ${isSample ? 'sample' : 'uploaded'} PDF: ${decodeURIComponent(filename)}` 
-      });
-    }
+    analyzePdfMutation.mutate({ pdfUrl, prompt: `Analyze ${isSample ? 'sample' : 'uploaded'} PDF: ${decodeURIComponent(filename)}` });
   };
 
   const handleUploadComplete = (uploadedUrl: string) => {
@@ -134,22 +118,22 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-white dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col relative bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <Header />
 
-      <main className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full">
+      <main className="flex-1 px-4 py-6 md:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         <ClientProvider>
-          <div className="space-y-8">
+          <div className="space-y-12">
             {/* Hero Section */}
-            <section className="text-center py-10 md:py-14 px-6 rounded-2xl bg-blue-600 text-white shadow-md">
-              <h1 className="text-3xl md:text-5xl font-bold mb-5 tracking-tight">
+            <section className="text-center py-8 md:py-12 px-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl">
+              <h1 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">
                 SambaScribe PDF Analyzer
               </h1>
-              <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90 mb-6">
+              <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90">
                 Analyze PDF documents with AI to understand samba rhythms, patterns, and musical structures.
               </p>
               
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-5 text-lg">
+              <div className="mt-8 flex items-center justify-center space-x-4 text-lg">
                 <div className="flex items-center animate-pulse">
                   <FileText className="w-6 h-6 mr-2" />
                   <span>PDF</span>
@@ -168,40 +152,23 @@ export default function HomePage() {
             </section>
             
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
-              {/* Illustration */}
-              <div className="md:col-span-3 flex justify-center md:justify-start items-center mb-4 md:mb-0">
-                <div className="relative rounded-2xl overflow-hidden shadow-md max-w-xs border-2 border-gray-50 dark:border-gray-800">
-                  <Image 
-                    src="/files/Illustration.jpg" 
-                    alt="Samba Rhythm Illustration" 
-                    width={300} 
-                    height={400}
-                    className="object-cover rounded-2xl w-full h-auto hover:scale-105 transition-transform duration-300"
-                    priority
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent py-2 px-3">
-                    <p className="text-white text-xs font-medium">Samba Rhythm Illustration</p>
-                  </div>
-                </div>
-              </div>
-
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Sample PDFs Section */}
-              <div className="bg-white dark:bg-gray-800 p-6 sm:p-7 rounded-xl shadow-sm transition-all hover:shadow-md border border-gray-100 dark:border-gray-700 h-full md:col-span-4 flex flex-col">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                  <FileText className="w-5 h-5 mr-2 text-blue-500" />
+              <div className="col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <FileText className="w-6 h-6 mr-2 text-blue-500" />
                   Sample PDFs
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Try out our sample documents to see how SambaScribe works
                 </p>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   {sampleFiles.map((file) => (
                     <button
                       key={file.name}
                       onClick={() => handleAnalyzePdf(file.filename, true)}
-                      disabled={isLoading}
-                      className="flex items-center p-4 border border-gray-300 dark:border-gray-500 rounded-2xl cursor-pointer bg-gray-50/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-[1.02] text-left shadow-sm"
+                      disabled={isLoading || status !== "authenticated"}
+                      className="flex items-center p-4 border rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-left"
                     >
                       <FileText className="w-5 h-5 mr-3 text-blue-500 flex-shrink-0" />
                       <span className="font-medium text-gray-700 dark:text-gray-300">
@@ -212,41 +179,41 @@ export default function HomePage() {
                 </div>
                 {status === "unauthenticated" && (
                   <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-4">
-                    Try our sample PDFs and sign in for more features
+                    Please sign in to analyze samples
                   </p>
                 )}
               </div>
 
               {/* Upload PDF Section */}
-              <div className="bg-white dark:bg-gray-800 p-6 sm:p-7 rounded-xl shadow-sm transition-all hover:shadow-md border border-gray-100 dark:border-gray-700 h-full md:col-span-5">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                  <UploadCloud className="w-5 h-5 mr-2 text-blue-500" />
+              <div className="col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <UploadCloud className="w-6 h-6 mr-2 text-blue-500" />
                   Upload PDF
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Upload your own PDF document for AI analysis
                 </p>
                 {status === "unauthenticated" ? (
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-5 text-center bg-gray-50 dark:bg-gray-800/30">
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-800/30">
                     <LockIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" />
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Sign In Required</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sign In Required</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
                       Please sign in to upload and analyze your own PDF files.
                     </p>
                     <Link
                       href="/api/auth/signin"
-                      className="inline-flex items-center px-4 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       Sign In
                     </Link>
                   </div>
                 ) : isCheckingSubscription ? (
                   <div className="flex justify-center items-center p-6 border rounded-lg bg-gray-50 dark:bg-gray-800/30">
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    <span className="text-sm">Checking subscription status...</span>
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    <span>Checking subscription status...</span>
                   </div>
                 ) : hasSubscription ? (
-                  <div className="p-2">
+                  <div>
                     <PdfUpload 
                       onUploadComplete={handleUploadComplete} 
                       disabled={isLoading} 
@@ -254,15 +221,15 @@ export default function HomePage() {
                   </div>
                 ) : (
                   // User is authenticated but no subscription
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-5 text-center bg-gray-50 dark:bg-gray-800/30">
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-800/30">
                     <LockIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" />
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Premium Feature</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Premium Feature</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
                       Uploading your own files requires a premium subscription.
                     </p>
                     <Link
                       href="/api/stripe/checkout"
-                      className="inline-flex items-center px-4 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       Upgrade to Premium
                     </Link>
@@ -271,20 +238,21 @@ export default function HomePage() {
               </div>
 
               {/* Subscription Manager Section */} 
-              <div className="bg-white dark:bg-gray-800 p-6 sm:p-7 rounded-xl shadow-sm transition-all hover:shadow-md border border-gray-100 dark:border-gray-700 md:col-span-12 lg:col-span-5 md:row-start-2 lg:row-start-1 lg:col-start-8 h-full">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                  <Sparkles className="w-5 h-5 mr-2 text-blue-500" />
+              <div className="col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <Sparkles className="w-6 h-6 mr-2 text-blue-500" />
                   {status === "authenticated" ? "Your Subscription" : "Get Premium"}
                 </h2>
                 {status === "authenticated" ? (
                   <>
                     <SubscriptionManager />
                     {!hasSubscription && (
-                      <div className="mt-5 text-center px-2">
+                      <div className="mt-4 text-center">
                         <Link
                           href="/api/stripe/checkout"
-                          className="inline-flex items-center justify-center w-full px-4 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
+                          <Sparkles className="w-4 h-4 mr-2" />
                           Upgrade to Premium
                         </Link>
                       </div>
@@ -292,40 +260,45 @@ export default function HomePage() {
                   </>
                 ) : (
                   <div className="text-center p-4">
-                    <div className="mb-5">
-                      <h3 className="text-lg font-semibold mb-3">Premium Benefits</h3>
-                      <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-3 text-left">
-                        <li className="flex items-start">
-                          <span className="mr-2 text-green-500">✓</span>
-                          Upload your own PDF scores
-                        </li>
-                      </ul>
-                    </div>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                      Sign in to manage your subscription or upgrade to premium for full access.
+                    </p>
                     <Link
                       href="/api/auth/signin"
-                      className="inline-flex items-center justify-center w-full px-4 py-2.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
-                      Sign In to Subscribe
+                      Sign In
                     </Link>
                   </div>
                 )}
               </div>
             </div>
-            
-            {/* Analysis Results Section */}
-            {analysisResult && (
-              <div className="mt-8" ref={resultsRef}>
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 sm:p-7 border border-gray-100 dark:border-gray-700">
-                  <h2 className="text-xl font-bold mb-4 flex items-center">
-                    <Music className="w-5 h-5 mr-2 text-blue-500" />
-                    Analysis Results {analyzedFilename ? `for ${analyzedFilename}` : ""}
-                  </h2>
-                  <div className="prose dark:prose-invert max-w-none">
-                    <div className="whitespace-pre-wrap font-mono text-sm bg-gray-50 dark:bg-gray-700 p-5 rounded-lg overflow-auto max-h-[600px]">
-                      {analysisResult}
-                    </div>
+
+            {/* AI Analysis Results Section */}
+            {(isLoading || analysisResult) && (
+              <div 
+                ref={resultsRef} 
+                className="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-all duration-300 animate-fade-in mt-8 space-y-4"
+              >
+                <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-6 flex items-center justify-center">
+                  <Music className="w-8 h-8 mr-3 text-blue-500" />
+                  Analysis Results {analyzedFilename ? `for ${analyzedFilename}` : ''}
+                </h2>
+                
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center p-12">
+                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+                    <p className="text-xl text-gray-600 dark:text-gray-400">
+                      Analyzing your PDF with AI...
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="prose dark:prose-invert max-w-none">
+                    {analysisResult && (
+                      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg" dangerouslySetInnerHTML={{ __html: analysisResult }} />
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -333,11 +306,11 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="text-sm text-neutral-600 dark:text-neutral-400">
             © {new Date().getFullYear()} All Rights Reserved
           </span>
-          <div className="flex items-center gap-8 text-sm text-neutral-600 dark:text-neutral-400">
+          <div className="flex items-center gap-6 text-sm text-neutral-600 dark:text-neutral-400">
             <a href="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400">
               Privacy Policy
             </a>
