@@ -60,6 +60,7 @@
 - Enhanced homepage by adding Samba Rhythm Illustration image next to the sample PDFs with responsive layout, hover effects, and image caption for better visual appeal.
 - Updated sample PDFs functionality to allow analysis without login, providing a preview experience to non-authenticated users while encouraging sign-up for full features.
 - Fixed backend authentication error by modifying the PDF analyzer tRPC route to use publicProcedure instead of protectedProcedure, with conditional authentication that allows sample PDFs to be analyzed by anonymous users.
+- Redesigned homepage layout with 50/50 split between Illustration image and Sample PDFs section, removed all gradient backgrounds, and improved content organization for better visual balance.
 
 # SambaScribe Updates
 
