@@ -1,4 +1,5 @@
 import { createCallerFactory, createTRPCRouter } from "./trpc";
+import { pdfAnalyzerRouter } from "./routers/pdfAnalyzer"; // Import the new router
 // import all routers here
 
 /**
@@ -8,6 +9,7 @@ import { createCallerFactory, createTRPCRouter } from "./trpc";
  */
 export const appRouter = createTRPCRouter({
   // add routers here
+  pdfAnalyzer: pdfAnalyzerRouter, // Add the new router
 });
 
 // export type definition of API

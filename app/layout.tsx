@@ -4,6 +4,7 @@ import './globals.css'
 import { Providers } from '@/components/Providers'
 import { ThemeAwareToast } from '../src/components/theme/ThemeAwareToast'
 import 'react-toastify/dist/ReactToastify.css'
+import { TRPCReactProvider } from '@/lib/trpc/react'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,10 +21,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen bg-white dark:bg-gray-900 dark:text-gray-50`}>
-        <Providers>
-          {children}
-          <ThemeAwareToast />
-        </Providers>
+        <TRPCReactProvider>
+          <Providers>
+            {children}
+            <ThemeAwareToast />
+          </Providers>
+        </TRPCReactProvider>
       </body>
     </html>
   )

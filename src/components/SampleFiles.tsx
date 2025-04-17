@@ -41,188 +41,71 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
 
     try {
       setIsProcessing(file.id);
-      toast.info(`AI is analyzing ${file.title}...`);
+      toast.info(`Analyzing ${file.title} with Claude 3.5 Sonnet...`);
       
-      // First try Claude analysis
-      try {
-        // Get the URL for the API to process
-        const fileUrl = `/api/uploads/${file.filename}`;
-        
-        // If the file doesn't exist in uploads folder, use samples folder
-        const sampleUrl = `/samples/${file.filename}`;
-        
-        // Prepare prompt for Claude
-        const prompt = "Analyze this samba music sheet PDF. Identify all rhythm patterns, breaks, and sections. Provide a detailed analysis of the notation and generate vocal mnemonics for each rhythm pattern. Format your response in a clear, structured way.";
-        
-        console.log("[SampleFiles] Processing with Claude:", fileUrl);
-        
-        // Use our Claude API endpoint
-        const claudeResponse = await fetch("/api/parse-pdf", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            pdfUrl: fileUrl,
-            prompt: prompt,
-          }),
-        });
-        
-        if (claudeResponse.ok) {
-          const claudeData = await claudeResponse.json();
-          console.log("[SampleFiles] Claude analysis successful:", claudeData);
-          
-          // Process Claude response into our expected format
-          let analysis = "";
-          
-          if (Array.isArray(claudeData.analysis)) {
-            claudeData.analysis.forEach((block: any) => {
-              if (block.type === "text") {
-                analysis += block.text;
-              }
-            });
-          } else if (typeof claudeData.analysis === 'string') {
-            analysis = claudeData.analysis;
-          } else {
-            analysis = JSON.stringify(claudeData.analysis);
-          }
-          
-          // Extract mnemonics from the analysis text
-          const mnemonics = extractMnemonicsFromText(analysis);
-          
-          const aiData: AiNotationData = {
-            filename: file.filename,
-            aiSummary: analysis,
-            mnemonics: mnemonics.length ? mnemonics : [
-              { text: "DUM ka DUM ka", pattern: "Basic Pattern", description: "Extracted from Claude analysis" }
-            ]
-          };
-          
-          if (onProcessComplete) {
-            onProcessComplete(aiData);
-          }
-          
-          toast.success(`${file.title} analyzed with Claude AI successfully`);
-          return; // Successfully processed with Claude
-        } else {
-          console.error("[SampleFiles] Claude analysis failed, will try fallback");
-        }
-      } catch (claudeError) {
-        console.error("[SampleFiles] Error with Claude analysis:", claudeError);
-        // Continue to fallback methods below
+      // Get the URL for the API to process
+      const fileUrl = `/api/uploads/${file.filename}`;
+      
+      // If the file doesn't exist in uploads folder, use samples folder
+      const sampleUrl = `/samples/${file.filename}`;
+      
+      // Prepare prompt for Claude
+      const prompt = "Analyze this samba music sheet PDF in detail. Identify all rhythm patterns, breaks, and sections. Provide a comprehensive analysis of the notation structure, tempo indications, and any special performance notes. Generate clear vocal mnemonics for each rhythm pattern that would help a percussionist learn the piece.";
+      
+      console.log("[SampleFiles] Processing with Claude 3.5 Sonnet:", fileUrl);
+      
+      // Use our Claude API endpoint - same as PdfAnalyzer implementation
+      const claudeResponse = await fetch("/api/parse-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pdfUrl: fileUrl,
+          prompt: prompt,
+        }),
+      });
+      
+      if (!claudeResponse.ok) {
+        const errorData = await claudeResponse.json();
+        throw new Error(errorData.error || "Failed to analyze PDF with Claude");
       }
       
-      // Fall back to the original methods if Claude fails
+      const claudeData = await claudeResponse.json();
+      console.log("[SampleFiles] Claude 3.5 Sonnet analysis successful");
       
-      // Construct the URL for the sample file
-      const sampleFileUrl = `/samples/${file.filename}`;
-      console.log("[SampleFiles] Falling back to original processing method for:", sampleFileUrl);
+      // Process Claude response into our expected format - same as PdfAnalyzer
+      let analysis = "";
       
-      // Try the API endpoint
-      const apiUrl = "/api/process";
-      console.log("[SampleFiles] Calling API endpoint:", apiUrl);
-      
-      const requestBody = { fileUrl: sampleFileUrl };
-      
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
+      if (Array.isArray(claudeData.analysis)) {
+        claudeData.analysis.forEach((block: any) => {
+          if (block.type === "text") {
+            analysis += block.text;
+          }
         });
-        
-        console.log(`[SampleFiles] API response status:`, response.status);
-        
-        // If we get a successful response, use it
-        if (response.ok) {
-          const responseText = await response.text();
-          console.log("[SampleFiles] Response text (first 100 chars):", responseText.substring(0, 100) + "...");
-          
-          try {
-            const processData = JSON.parse(responseText);
-            console.log("[SampleFiles] Successfully parsed JSON response");
-            
-            if (!processData || typeof processData !== 'object') {
-              console.error("[SampleFiles] Invalid response format:", typeof processData);
-              toast.error("AI analysis returned an invalid response format");
-              return;
-            }
-            
-            toast.success(`${file.title} analyzed with AI successfully`);
-            
-            if (onProcessComplete) {
-              const aiData = processData.data || processData;
-              console.log("[SampleFiles] Final AI data:", aiData);
-              
-              if (typeof aiData === 'object' &&
-                  typeof aiData.filename === 'string' &&
-                  typeof aiData.aiSummary === 'string' &&
-                  Array.isArray(aiData.mnemonics)) {
-                onProcessComplete(aiData);
-              } else {
-                console.error("[SampleFiles] AI data is missing required fields:", aiData);
-                const fallbackData = {
-                  filename: file.filename,
-                  aiSummary: "The file was analyzed but returned unexpected data. Please try another file.",
-                  mnemonics: [
-                    { text: "Error in processing", pattern: "Error", description: "unexpected data format" },
-                    { text: "Please try again", pattern: "Error", description: "retry recommended" },
-                    { text: "Contact support if needed", pattern: "Support", description: "get help" }
-                  ]
-                };
-                
-                toast.warning("AI analysis completed with unexpected results");
-                onProcessComplete(fallbackData);
-              }
-            }
-          } catch (parseError) {
-            console.error("[SampleFiles] Failed to parse API response:", parseError);
-            throw new Error("Received invalid response format from API");
-          }
-        } else {
-          // Try fallback endpoint if primary fails
-          console.error(`[SampleFiles] Primary API failed with status ${response.status}, trying fallback`);
-          const errorText = await response.text();
-          console.error(`[SampleFiles] Error text:`, errorText.substring(0, 100));
-          
-          // Call the fallback API
-          const fallbackUrl = "/api";
-          console.log("[SampleFiles] Calling fallback API:", fallbackUrl);
-          
-          const fallbackResponse = await fetch(fallbackUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestBody),
-          });
-          
-          console.log(`[SampleFiles] Fallback API response:`, fallbackResponse.status);
-          
-          if (!fallbackResponse.ok) {
-            console.error(`[SampleFiles] Fallback API also failed: ${fallbackResponse.status}`);
-            const fallbackErrorText = await fallbackResponse.text();
-            throw new Error(`API processing failed: ${fallbackErrorText.substring(0, 100)}...`);
-          }
-          
-          const fallbackText = await fallbackResponse.text();
-          console.log("[SampleFiles] Fallback response text (first 100 chars):", fallbackText.substring(0, 100) + "...");
-          
-          const fallbackData = JSON.parse(fallbackText);
-          
-          toast.success(`${file.title} analyzed with the fallback API`);
-          
-          if (onProcessComplete && fallbackData) {
-            console.log("[SampleFiles] Fallback data:", fallbackData);
-            onProcessComplete(fallbackData);
-          }
-        }
-      } catch (error) {
-        console.error("[SampleFiles] Error during API call:", error);
-        throw error;
+      } else if (typeof claudeData.analysis === 'string') {
+        analysis = claudeData.analysis;
+      } else {
+        analysis = JSON.stringify(claudeData.analysis, null, 2);
       }
+      
+      // Extract mnemonics from the analysis text
+      const mnemonics = extractMnemonicsFromText(analysis);
+      
+      const aiData: AiNotationData = {
+        filename: file.filename,
+        aiSummary: analysis,
+        mnemonics: mnemonics.length ? mnemonics : [
+          { text: "DUM ka DUM ka", pattern: "Basic Pattern", description: "Extracted from Claude analysis" }
+        ]
+      };
+      
+      if (onProcessComplete) {
+        onProcessComplete(aiData);
+      }
+      
+      toast.success(`${file.title} analyzed with Claude 3.5 Sonnet successfully`);
+      
     } catch (error) {
       console.error("[SampleFiles] Process error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to process file. Please try again.");

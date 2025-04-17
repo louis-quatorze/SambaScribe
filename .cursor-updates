@@ -51,6 +51,10 @@
 - Fixed OpenAI API key error by implementing server-side only AI client with proper safety checks and API routes for client-side processing.
 - Fixed API route 404 error by recreating API route files with proper content and fixing file corruption issues.
 - Fixed API endpoint 404 errors for sample file processing by creating correct API routes in app/api directory structure (process and root endpoints) and adding comprehensive logging for better debugging.
+- Redesigned Samba PDF Analyzer page to display Sample PDFs above Upload PDF section, removed URL analysis tab, and ensured both components use Claude 3.5 Sonnet for AI-powered analysis.
+- Refactored PDF upload and sample files processing to exactly match the PDF parser implementation, using Claude 3.5 Sonnet with consistent error handling and response processing.
+- Fixed Claude PDF analysis error by modifying the parse-pdf API route to properly convert relative URLs to absolute URLs when fetching PDF files.
+- Implemented PDF upload functionality for the PDF Analyzer page, storing files in public/uploads for Anthropic AI analysis.
 
 # SambaScribe Updates
 
@@ -103,4 +107,4 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 
 - Fixed PDF processing with improved AI prompting and full base64 content handling to ensure AI properly analyzes the actual PDF content rather than just responding to filenames.
 
- 
+ 

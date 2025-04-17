@@ -29,8 +29,30 @@ export async function POST(req: NextRequest) {
     console.log("[/api/parse-pdf] Processing PDF from URL:", pdfUrl);
     console.log("[/api/parse-pdf] Using prompt:", prompt);
 
-    // Fetch the PDF content from the local URL
-    const pdfResponse = await fetch(pdfUrl);
+    // Convert relative URL to absolute URL if needed
+    let absolutePdfUrl = pdfUrl;
+    if (pdfUrl.startsWith('/')) {
+      // Get the origin from the request URL
+      const origin = req.nextUrl.origin;
+      
+      // Special case for files in the samples directory - these are served from the public directory
+      if (pdfUrl.includes('/samples/')) {
+        absolutePdfUrl = `${origin}${pdfUrl}`;
+      } 
+      // Normal API routes
+      else if (pdfUrl.startsWith('/api/')) {
+        absolutePdfUrl = `${origin}${pdfUrl}`;
+      }
+      // Fallback for any other paths
+      else {
+        absolutePdfUrl = `${origin}${pdfUrl}`;
+      }
+      
+      console.log("[/api/parse-pdf] Converted to absolute URL:", absolutePdfUrl);
+    }
+
+    // Fetch the PDF content from the URL
+    const pdfResponse = await fetch(absolutePdfUrl);
     if (!pdfResponse.ok) {
       throw new Error(`Failed to fetch PDF: ${pdfResponse.status} ${pdfResponse.statusText}`);
     }

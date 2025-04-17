@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, LogIn, LogOut, User, Home, Info, CreditCard, ChevronDown } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, Home, Info, CreditCard, ChevronDown, FileText } from "lucide-react";
 
 export function Header() {
   const { data: session, status } = useSession();
@@ -53,6 +53,12 @@ export function Header() {
               Dashboard
             </Link>
             <Link
+              href="/samba-pdf-samples"
+              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              Samba PDFs
+            </Link>
+            <Link
               href="/pricing"
               className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
@@ -90,6 +96,12 @@ export function Header() {
           </div>
         ) : (
           <div className="flex items-center gap-4">
+            <Link
+              href="/samba-pdf-samples"
+              className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              Samba PDFs
+            </Link>
             <Link
               href="/pricing"
               className="text-sm text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -140,6 +152,14 @@ export function Header() {
             >
               <User className="h-4 w-4" />
               Dashboard
+            </Link>
+            <Link
+              href="/samba-pdf-samples"
+              className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <FileText className="h-4 w-4" />
+              Samba PDFs
             </Link>
             <Link
               href="/pricing"
