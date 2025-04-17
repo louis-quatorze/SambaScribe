@@ -15,8 +15,6 @@ const nextConfig = {
       }
     },
   },
-  // Set the base path to match your deployment environment
-  basePath: process.env.NODE_ENV === 'production' ? '/music-sheet-analysis' : '',
   // Allow images and files to be served from the uploads directory
   images: {
     remotePatterns: [
