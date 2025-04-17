@@ -112,4 +112,10 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 
 - Set dark theme as the default UI theme by updating ThemeProvider configurations, adding dark class to HTML element, and updating global CSS to support better dark mode consistency across the application.
 
+- Improved homepage layout with multiple fluid columns, better spacing, and mobile responsiveness. Removed gradient background, added curved buttons for sample files, aligned content boxes, and adjusted borders.
+
+- Enhanced homepage by adding Samba Rhythm Illustration image next to the sample PDFs with responsive layout, hover effects, and image caption for better visual appeal.
+
+- Updated sample PDFs functionality to allow analysis without login, providing a preview experience to non-authenticated users while encouraging sign-up for full features.
+
  
