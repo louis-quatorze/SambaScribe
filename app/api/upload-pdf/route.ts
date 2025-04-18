@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure uploads directory exists
-    const uploadsDir = join(process.cwd(), "public", "uploads");
+    const uploadsDir = join(process.cwd(), "uploads");
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
     }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, fileBuffer);
 
     // Return the file URL
-    const fileUrl = `/uploads/${fileName}`;
+    const fileUrl = `/api/uploads/${fileName}`;
 
     return NextResponse.json({
       success: true,

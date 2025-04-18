@@ -44,3 +44,12 @@
 2025-04-18T05:42:04.746Z | {"type":"analyze","target":"analysis_start","metadata":"{\"source\":\"sample\",\"name\":\"Mangueira.pdf\"}","timestamp":1744954924746}
 2025-04-18T05:42:11.827Z | {"type":"analyze","target":"analysis_complete","metadata":"{\"source\":\"sample\",\"name\":\"Mangueira.pdf\",\"success\":true}","timestamp":1744954931827}
 2025-04-18T05:42:15.075Z | {"type":"click","target":"navigation","metadata":"{\"destination\":\"analytics\",\"email\":\"larivierlouise@gmail.com\"}","timestamp":1744954935075}
+2025-04-18T19:56:55.441Z | {"type":"upload","target":"user_file","metadata":"{\"fileType\":\"pdf\",\"fileSize\":66379}","timestamp":1745006215441}
+2025-04-18T19:56:55.442Z | {"type":"analyze","target":"analysis_start","metadata":"{\"source\":\"upload\",\"name\":\"1745006215433-Samba_Da_Musa-Terceira.pdf\"}","timestamp":1745006215442}
+2025-04-18T19:57:11.471Z | {"type":"analyze","target":"analysis_complete","metadata":"{\"source\":\"upload\",\"name\":\"1745006215433-Samba_Da_Musa-Terceira.pdf\",\"success\":true}","timestamp":1745006231471}
+2025-04-18T20:00:11.703Z | {"type":"upload","target":"user_file","metadata":"{\"fileType\":\"pdf\",\"fileSize\":68553}","timestamp":1745006411703}
+2025-04-18T20:00:11.704Z | {"type":"analyze","target":"analysis_start","metadata":"{\"source\":\"upload\",\"name\":\"1745006411698-2023_Solstice_Samba_Reggae-Repique.pdf\"}","timestamp":1745006411704}
+2025-04-18T20:00:27.205Z | {"type":"analyze","target":"analysis_complete","metadata":"{\"source\":\"upload\",\"name\":\"1745006411698-2023_Solstice_Samba_Reggae-Repique.pdf\",\"success\":true}","timestamp":1745006427205}
+2025-04-18T20:02:08.424Z | {"type":"upload","target":"user_file","metadata":"{\"fileType\":\"pdf\",\"fileSize\":68553}","timestamp":1745006528424}
+2025-04-18T20:02:08.424Z | {"type":"analyze","target":"analysis_start","metadata":"{\"source\":\"upload\",\"name\":\"1745006528416-2023_Solstice_Samba_Reggae-Repique.pdf\"}","timestamp":1745006528424}
+2025-04-18T20:02:24.925Z | {"type":"analyze","target":"analysis_complete","metadata":"{\"source\":\"upload\",\"name\":\"1745006528416-2023_Solstice_Samba_Reggae-Repique.pdf\",\"success\":true}","timestamp":1745006544925}
