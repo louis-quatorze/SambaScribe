@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Mail } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 // Interface for OAuth button props
 interface OAuthButtonProps {
@@ -33,9 +34,13 @@ const OAuthButton = ({
   const handleClick = async () => {
     try {
       setIsLoading(true);
+      // Track the login attempt
+      trackEvent('view', 'login_attempt', { provider });
       await signIn(provider, { callbackUrl });
     } catch (error) {
       console.error(`Error signing in with ${provider}:`, error);
+      // Track the login error
+      trackEvent('view', 'login_error', { provider, error: String(error) });
     } finally {
       setIsLoading(false);
     }

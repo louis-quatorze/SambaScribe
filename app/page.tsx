@@ -11,6 +11,7 @@ import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { PdfUpload } from "@/components/PdfUpload";
 import ClientProvider from "@/components/ClientProvider";
 import Image from "next/image";
+import { trackSamplePdfClick, trackAnalysisStart, trackAnalysisComplete } from "@/lib/analytics";
 
 // Define sample PDFs from the /samples/ directory
 const sampleFiles = [
@@ -94,6 +95,16 @@ export default function HomePage() {
         setParsedMnemonics([]);
       }
       
+      // Determine if this was a sample or uploaded file
+      const isSample = variables.pdfUrl.includes('/samples/');
+      
+      // Track successful analysis completion
+      trackAnalysisComplete(
+        isSample ? 'sample' : 'upload',
+        decodeURIComponent(filename),
+        true
+      );
+      
       toast.success(`Analyzed ${decodeURIComponent(filename)} successfully!`);
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -102,6 +113,17 @@ export default function HomePage() {
     onError: (error, variables) => {
       const urlParts = variables.pdfUrl.split('/');
       const filename = urlParts[urlParts.length - 1];
+      
+      // Determine if this was a sample or uploaded file
+      const isSample = variables.pdfUrl.includes('/samples/');
+      
+      // Track failed analysis
+      trackAnalysisComplete(
+        isSample ? 'sample' : 'upload',
+        decodeURIComponent(filename),
+        false
+      );
+      
       toast.error(`Analysis failed for ${decodeURIComponent(filename)}: ${error.message}`);
       setAnalyzedFilename(null); // Clear filename on error
     },
@@ -156,6 +178,19 @@ export default function HomePage() {
     setAnalysisResult(null);
     setAnalyzedFilename(null); // Clear previous filename
     setParsedMnemonics([]); // Clear previous mnemonics
+    
+    // Track the analysis start event
+    if (isSample) {
+      // If it's a sample, track the sample click
+      trackSamplePdfClick(filename);
+      trackAnalysisStart('sample', filename);
+    } else {
+      // For uploaded files, track the analysis start
+      const urlParts = filename.split('/');
+      const uploadedFilename = urlParts[urlParts.length - 1];
+      trackAnalysisStart('upload', uploadedFilename);
+    }
+    
     // Use default prompt to ensure consistent analysis
     analyzePdfMutation.mutate({ pdfUrl });
   };
@@ -172,6 +207,8 @@ export default function HomePage() {
     // Extract the filename from the URL for display purposes
     const urlParts = uploadedUrl.split('/');
     const filename = urlParts[urlParts.length - 1];
+    
+    // Note: We don't need to track upload here as it's already tracked in the PdfUpload component
     
     // Call the analyze function with the URL and set it as not a sample
     handleAnalyzePdf(absoluteUrl, false);
@@ -244,7 +281,11 @@ export default function HomePage() {
                   {sampleFiles.map((file) => (
                     <button
                       key={file.name}
-                      onClick={() => handleAnalyzePdf(file.filename, true)}
+                      onClick={() => {
+                        // Directly track the click here as well
+                        trackSamplePdfClick(file.filename);
+                        handleAnalyzePdf(file.filename, true);
+                      }}
                       disabled={isLoading}
                       className="flex items-center p-4 border border-gray-300 dark:border-gray-500 rounded-2xl cursor-pointer bg-gray-50/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-[1.02] text-left shadow-sm"
                     >

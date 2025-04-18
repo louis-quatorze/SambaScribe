@@ -3,13 +3,20 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, LogIn, LogOut, User, Home, ChevronDown, Music } from "lucide-react";
+import { Menu, X, LogIn, LogOut, User, Home, ChevronDown, Music, LineChart } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
+
+// Authorized user for analytics
+const AUTHORIZED_EMAIL = "larivierlouise@gmail.com";
 
 export function Header() {
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Check if user is authorized to access analytics
+  const isAuthorizedForAnalytics = session?.user?.email === AUTHORIZED_EMAIL;
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" });
@@ -32,6 +39,11 @@ export function Header() {
   // Toggle user menu on click
   const toggleUserMenu = () => {
     setUserMenuOpen(prev => !prev);
+  };
+
+  // Track navigation events
+  const trackNavigation = (destination: string) => {
+    trackEvent('click', 'navigation', { destination });
   };
 
   return (
@@ -68,8 +80,24 @@ export function Header() {
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
                     <div className="py-1">
+                      {isAuthorizedForAnalytics && (
+                        <Link
+                          href="/admin/analytics"
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            trackNavigation('analytics');
+                          }}
+                        >
+                          <LineChart className="h-4 w-4" />
+                          Analytics
+                        </Link>
+                      )}
                       <button
-                        onClick={handleSignOut}
+                        onClick={() => {
+                          handleSignOut();
+                          trackEvent('auth', 'signout', {});
+                        }}
                         className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <LogOut className="h-4 w-4" />
@@ -114,17 +142,35 @@ export function Header() {
               <Link
                 href="/"
                 className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  trackNavigation('home');
+                }}
               >
                 <Home className="h-5 w-5" />
                 Home
               </Link>
+              
+              {status === "authenticated" && isAuthorizedForAnalytics && (
+                <Link
+                  href="/admin/analytics"
+                  className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    trackNavigation('analytics');
+                  }}
+                >
+                  <LineChart className="h-5 w-5" />
+                  Analytics
+                </Link>
+              )}
               
               {status === "authenticated" ? (
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     handleSignOut();
+                    trackEvent('auth', 'signout', {});
                   }}
                   className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
                 >

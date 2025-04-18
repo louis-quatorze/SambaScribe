@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FileText, ChevronRight } from "lucide-react";
 import { toast } from "react-toastify";
 import { AiNotationData } from "@/lib/services/aiPdfProcessor";
+import { trackSamplePdfClick, trackAnalysisStart, trackAnalysisComplete, forceFlushEvents } from "@/lib/analytics";
 
 interface SampleFile {
   id: string;
@@ -40,8 +41,17 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
     if (isProcessing) return;
 
     try {
+      // Track that the user clicked on this sample PDF
+      trackSamplePdfClick(file.title);
+      
       setIsProcessing(file.id);
       toast.info(`Analyzing ${file.title} with Claude 3.5 Sonnet...`);
+      
+      // Track analysis start
+      trackAnalysisStart('sample', file.title);
+      
+      // Immediately flush these events to ensure they're recorded
+      await forceFlushEvents();
       
       // Get the URL for the API to process
       const fileUrl = `/api/uploads/${file.filename}`;
@@ -104,10 +114,23 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
         onProcessComplete(aiData);
       }
       
+      // Track successful analysis completion
+      trackAnalysisComplete('sample', file.title, true);
+      
+      // Force flush the completion event
+      await forceFlushEvents();
+      
       toast.success(`${file.title} analyzed with Claude 3.5 Sonnet successfully`);
       
     } catch (error) {
       console.error("[SampleFiles] Process error:", error);
+      
+      // Track failed analysis
+      trackAnalysisComplete('sample', file.title, false);
+      
+      // Force flush the error event
+      await forceFlushEvents();
+      
       toast.error(error instanceof Error ? error.message : "Failed to process file. Please try again.");
       
       if (onProcessComplete) {
@@ -212,14 +235,14 @@ export function SampleFiles({ onProcessComplete }: SampleFilesProps) {
       <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
         Sample Files
       </h2>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border-2 border-gray-300 dark:border-gray-600">
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {sampleFiles.map((file) => (
             <li key={file.id} className="p-0">
               <button
                 onClick={() => processFile(file)}
                 disabled={isProcessing !== null}
-                className="w-full flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
+                className="w-full flex items-center p-4 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-l-4 hover:border-blue-500 transition-all text-left"
               >
                 <FileText className="h-6 w-6 text-blue-500 mr-3 flex-shrink-0" />
                 <span className="font-medium text-gray-800 dark:text-gray-200 flex-1">

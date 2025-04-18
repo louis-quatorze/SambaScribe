@@ -111,3 +111,20 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  type      String
+  target    String
+  metadata  String?  // JSON string of metadata
+  userId    String?  // Optional, for anonymous users
+  userEmail String?  // Optional email
+  timestamp DateTime @default(now())
+  clientIp  String?
+  userAgent String?
+
+  @@index([type])
+  @@index([target])
+  @@index([timestamp])
+  @@index([userId])
+}

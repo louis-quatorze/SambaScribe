@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { UploadCloud, Loader2 } from "lucide-react";
+import { trackFileUpload } from "@/lib/analytics";
 
 interface PdfUploadProps {
   onUploadComplete: (uploadedUrl: string) => void;
@@ -54,6 +55,9 @@ export function PdfUpload({ onUploadComplete, disabled = false, maxSizeMB = 10 }
       if (!uploadData.fileUrl) {
         throw new Error("No file URL returned from upload");
       }
+      
+      // Track the successful file upload
+      trackFileUpload('pdf', file.size);
       
       toast.success("PDF uploaded successfully");
       onUploadComplete(uploadData.fileUrl);

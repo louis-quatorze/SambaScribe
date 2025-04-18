@@ -4,6 +4,8 @@ import {
   type DefaultSession,
 } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { logEventsToFile } from "@/lib/server/analytics";
+import { type AnalyticsEvent } from "@/lib/analytics";
 
 export enum UserRole {
   user = "user",
@@ -73,6 +75,19 @@ declare module "next-auth/jwt" {
   }
 }
 
+// Function to log auth events server-side
+function logAuthEvent(type: string, data: any) {
+  // Log directly to file since we're on the server
+  logEventsToFile([{
+    type: 'auth',
+    target: type,
+    metadata: data,
+    timestamp: Date.now()
+  }]);
+  
+  console.log(`[Auth] ${type}:`, data);
+}
+
 export const authOptions: NextAuthOptions = {
   // No adapter - use JWT only
   providers: [
@@ -92,6 +107,7 @@ export const authOptions: NextAuthOptions = {
         // Basic validation
         if (!user?.email) {
           console.error("SignIn error: No email provided");
+          logAuthEvent('signin_error', { error: 'No email provided' });
           return false;
         }
 
@@ -99,21 +115,25 @@ export const authOptions: NextAuthOptions = {
         if (account?.provider === "google") {
           if (!profile?.email_verified) {
             console.error("SignIn error: Google email not verified");
+            logAuthEvent('signin_error', { 
+              provider: account.provider, 
+              error: 'Email not verified'
+            });
             return false;
           }
         }
 
-        // Additional validation can be added here
-        // For example, domain restrictions:
-        // const allowedDomains = ["example.com"];
-        // if (!allowedDomains.some(domain => user.email?.endsWith(domain))) {
-        //   console.error("SignIn error: Email domain not allowed");
-        //   return false;
-        // }
+        // Log successful sign-in
+        logAuthEvent('signin_success', { 
+          email: user.email,
+          provider: account?.provider,
+          userId: user.id
+        });
 
         return true;
       } catch (error) {
         console.error("SignIn callback error:", error);
+        logAuthEvent('signin_error', { error: String(error) });
         // You can throw specific errors here to trigger the error page
         // throw new Error("OAuthSignin");
         return false;

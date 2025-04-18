@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { Upload, FileType, Sliders, Loader } from "lucide-react";
 import { AiNotationData } from "@/lib/types";
+import { trackFileUpload, trackAnalysisStart, trackAnalysisComplete, forceFlushEvents } from "@/lib/analytics";
 
 interface MusicSheetUploaderProps {
   onProcessComplete: (data: AiNotationData) => void;
@@ -42,6 +43,12 @@ export function MusicSheetUploader({
       return;
     }
 
+    // Track file upload
+    trackFileUpload(file.type, file.size);
+    
+    // Force flush upload event
+    await forceFlushEvents();
+
     setUploading(true);
     // Call the onProcessStart callback if provided
     if (onProcessStart) {
@@ -50,6 +57,12 @@ export function MusicSheetUploader({
     
     try {
       toast.info("Analyzing music sheet with AI...");
+      
+      // Track analysis start
+      trackAnalysisStart('upload', file.name);
+      
+      // Force flush analysis start event
+      await forceFlushEvents();
       
       // Create form data with the file and parameters
       const formData = new FormData();
@@ -92,8 +105,21 @@ export function MusicSheetUploader({
       
       const data = await response.json();
       onProcessComplete(data);
+      
+      // Track successful analysis completion
+      trackAnalysisComplete('upload', file.name, true);
+      
+      // Force flush completion event
+      await forceFlushEvents();
+      
       toast.success("Music sheet processed successfully");
     } catch (error) {
+      // Track failed analysis
+      trackAnalysisComplete('upload', file.name, false);
+      
+      // Force flush error event
+      await forceFlushEvents();
+      
       toast.error(error instanceof Error ? error.message : "Failed to process file");
     } finally {
       setUploading(false);

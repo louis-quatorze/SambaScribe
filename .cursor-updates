@@ -68,6 +68,7 @@
 - Updated homepage to use the same samba analysis prompt with structured JSON output.
 - Enhanced pdfAnalyzer router with specialized samba analysis prompt and detailed logging.
 - Improved homepage results display with structured presentation of mnemonics and pattern descriptions.
+- Fixed upload events not being properly logged in analytics by adding tracking calls and ensuring events are properly flushed
 
 # SambaScribe Updates
 
@@ -123,5 +124,12 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 - Made PDF Analyzer the homepage and simplified navigation by removing Dashboard, Samba PDFs, and Pricing links.
 
 - Set dark theme as the default UI theme by updating ThemeProvider configurations, adding dark class to HTML element, and updating global CSS to support better dark mode consistency across the application.
+
+- Added analytics page for tracking PDF uploads and analysis, restricted to authorized admin with custom access control.
+- Added API route authorization to restrict admin analytics and logs access to specific authorized email.
+- Modified Header component to hide analytics link for unauthorized users.
+- Implemented proper error messages with toast notifications for unauthorized access attempts.
+- Updated analytics page to display events in reverse chronological order (newest first) for both database records and log files.
+- Fixed analytics logging for sample file and upload events by adding comprehensive error handling, immediate event flushing, and better data validation to ensure all events are properly recorded and displayed in the analytics dashboard.
 
  
