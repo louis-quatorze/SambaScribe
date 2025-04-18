@@ -270,7 +270,7 @@ export default function AnalyticsPage() {
                           {event.target}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {event.userEmail || (event.userId?.substring(0, 8)) || 'anonymous'}
+                          {event.userId?.substring(0, 8) || 'anonymous'}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                           <pre className="max-w-xs overflow-x-auto">

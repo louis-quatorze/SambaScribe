@@ -256,7 +256,7 @@ export default function HomePage() {
               <div className="flex justify-center items-center bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 h-full">
                 <div className="relative w-full">
                   <Image 
-                    src="/files/Illustration.jpg" 
+                    src="/files/samba.png" 
                     alt="Samba Rhythm Illustration" 
                     width={650} 
                     height={900}
