@@ -26,6 +26,12 @@ export default function HomePage() {
   const [hasSubscription, setHasSubscription] = useState<boolean>(false);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [parsedMnemonics, setParsedMnemonics] = useState<Array<{
+    text: string;
+    pattern?: string;
+    description?: string;
+  }>>([]);
+  const [showRawData, setShowRawData] = useState<boolean>(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const analyzePdfMutation = api.pdfAnalyzer.analyzePdf.useMutation({
@@ -34,7 +40,60 @@ export default function HomePage() {
       const urlParts = variables.pdfUrl.split('/');
       const filename = urlParts[urlParts.length - 1];
       setAnalyzedFilename(decodeURIComponent(filename)); // Store decoded filename
+      
+      // Store the raw analysis result
       setAnalysisResult(data.analysis);
+      
+      // Try to parse JSON from the response
+      try {
+        // Log the raw response to console for debugging
+        console.log("[HomePage] Raw AI response:", data.analysis);
+        
+        // Try to extract and parse JSON from the response
+        const jsonMatch = data.analysis.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        let jsonContent = jsonMatch ? jsonMatch[1].trim() : data.analysis.trim();
+        
+        // Find JSON object boundaries
+        if (jsonContent.includes('{') && jsonContent.includes('}')) {
+          const jsonStartIdx = jsonContent.indexOf('{');
+          const jsonEndIdx = jsonContent.lastIndexOf('}') + 1;
+          if (jsonStartIdx >= 0 && jsonEndIdx > jsonStartIdx) {
+            jsonContent = jsonContent.substring(jsonStartIdx, jsonEndIdx);
+          }
+        }
+        
+        // Parse JSON if it looks valid
+        if (jsonContent.startsWith('{') && jsonContent.endsWith('}')) {
+          const parsedData = JSON.parse(jsonContent);
+          console.log("[HomePage] Parsed JSON data:", parsedData);
+          
+          // If we have mnemonics, extract them in the expected format
+          if (parsedData.mnemonics && Array.isArray(parsedData.mnemonics)) {
+            const extractedMnemonics = parsedData.mnemonics.map((item: any) => ({
+              text: item.mnemonic || item.text || '',
+              pattern: item.pattern || '',
+              description: item.description || ''
+            }));
+            setParsedMnemonics(extractedMnemonics);
+            console.log("[HomePage] Extracted mnemonics:", extractedMnemonics);
+          } else {
+            setParsedMnemonics([]);
+          }
+          
+          // If we have a summary field, replace the raw analysis with just the summary
+          if (parsedData.summary) {
+            setAnalysisResult(parsedData.summary);
+          }
+        } else {
+          // If not valid JSON, keep the raw text and clear mnemonics
+          setParsedMnemonics([]);
+        }
+      } catch (error) {
+        console.error("Error parsing JSON from response:", error);
+        // Keep using raw text and clear mnemonics on error
+        setParsedMnemonics([]);
+      }
+      
       toast.success(`Analyzed ${decodeURIComponent(filename)} successfully!`);
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -96,7 +155,9 @@ export default function HomePage() {
     setIsLoading(true);
     setAnalysisResult(null);
     setAnalyzedFilename(null); // Clear previous filename
-    analyzePdfMutation.mutate({ pdfUrl, prompt: `Analyze ${isSample ? 'sample' : 'uploaded'} PDF: ${decodeURIComponent(filename)}` });
+    setParsedMnemonics([]); // Clear previous mnemonics
+    // Use default prompt to ensure consistent analysis
+    analyzePdfMutation.mutate({ pdfUrl });
   };
 
   const handleUploadComplete = (uploadedUrl: string) => {
@@ -292,6 +353,13 @@ export default function HomePage() {
                     Analysis Results {analyzedFilename ? `for ${analyzedFilename}` : ""}
                   </h2>
                   
+                  <button 
+                    onClick={() => setShowRawData(!showRawData)} 
+                    className="text-xs text-blue-500 hover:text-blue-700 mb-4"
+                  >
+                    {showRawData ? "Hide Raw Data" : "Show Raw Data (Debug)"}
+                  </button>
+                  
                   {isLoading ? (
                     <div className="flex flex-col items-center justify-center p-8">
                       <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
@@ -300,10 +368,48 @@ export default function HomePage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="prose dark:prose-invert max-w-none">
-                      <div className="whitespace-pre-wrap font-mono text-sm bg-gray-50 dark:bg-gray-700 p-5 rounded-lg overflow-auto max-h-[600px]">
-                        {analysisResult}
-                      </div>
+                    <div>
+                      {showRawData && (
+                        <div className="mb-6 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg overflow-auto max-h-[300px]">
+                          <pre className="text-xs whitespace-pre-wrap">
+                            {analysisResult}
+                          </pre>
+                        </div>
+                      )}
+                      
+                      {analysisResult && (
+                        <div className="prose dark:prose-invert max-w-none mb-6">
+                          <h3 className="text-lg font-semibold mb-2">Analysis</h3>
+                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            {analysisResult.includes('<') && analysisResult.includes('>') ? (
+                              <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
+                            ) : (
+                              <p className="whitespace-pre-wrap">{analysisResult}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {parsedMnemonics.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Samba Rhythm Mnemonics</h3>
+                          <div className="space-y-4">
+                            {parsedMnemonics.map((mnemonic, index) => (
+                              <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
+                                <div className="font-semibold text-blue-600 dark:text-blue-400">
+                                  {mnemonic.pattern || `Rhythm Pattern ${index + 1}`}
+                                </div>
+                                <div className="text-lg my-2 font-mono">"{mnemonic.text}"</div>
+                                {mnemonic.description && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-2 italic">
+                                    {mnemonic.description}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

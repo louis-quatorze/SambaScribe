@@ -2,25 +2,29 @@
 
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { Upload, FileType, Sliders } from "lucide-react";
+import { Upload, FileType, Sliders, Loader } from "lucide-react";
 import { AiNotationData } from "@/lib/types";
 
 interface MusicSheetUploaderProps {
   onProcessComplete: (data: AiNotationData) => void;
+  onProcessStart?: () => void;
   maxSizeMB?: number;
 }
 
 export function MusicSheetUploader({ 
-  onProcessComplete, 
+  onProcessComplete,
+  onProcessStart,
   maxSizeMB = 15 
 }: MusicSheetUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [temperature, setTemperature] = useState<number>(0.7);
-  const [topP, setTopP] = useState<number>(1);
+  const [temperature, setTemperature] = useState<number>(0.1);
+  const [topP, setTopP] = useState<number>(0.8);
   const [topK, setTopK] = useState<number | undefined>(undefined);
   const [customPrompt, setCustomPrompt] = useState<string>("");
   const maxSize = maxSizeMB * 1024 * 1024; // Convert to bytes
+
+  const defaultPrompt = "Act as a music analyst for a samba piece. Your task is to offer a concise summary of the composition, identifying its style, the type of samba (if recognizable), and the general instrumentation or ensemble setup. Pinpoint rhythm patterns, breaks, section labels, and captions from the file, and outline the overall structure and flow of the piece based on these elements. For each unique rhythm or break, devise a mnemonic entry. Deliver your complete response in the provided JSON format: {\"summary\": \"brief piece description and structure\", \"mnemonics\": [{\"pattern\": \"rhythm description\", \"mnemonic\": \"memorable phrase\", \"description\": \"relation of phrase to rhythm\"}]}. Each mnemonic should assist performers in internalizing the rhythm, be vivid, amusing, easy to remember, and encapsulate the feel or phrasing of the pattern.";
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,6 +43,11 @@ export function MusicSheetUploader({
     }
 
     setUploading(true);
+    // Call the onProcessStart callback if provided
+    if (onProcessStart) {
+      onProcessStart();
+    }
+    
     try {
       toast.info("Analyzing music sheet with AI...");
       
@@ -46,9 +55,16 @@ export function MusicSheetUploader({
       const formData = new FormData();
       formData.append("file", file);
       
-      if (customPrompt) {
-        formData.append("prompt", customPrompt);
-      }
+      // Use custom prompt if provided, otherwise use the default samba analysis prompt
+      const promptToUse = customPrompt || defaultPrompt;
+      formData.append("prompt", promptToUse);
+      
+      console.log("[MusicSheetUploader] Using prompt:", promptToUse);
+      console.log("[MusicSheetUploader] AI parameters:", { 
+        temperature, 
+        topP, 
+        topK 
+      });
       
       // Add AI parameters if custom values are set
       if (temperature !== 0.7) {
@@ -93,13 +109,24 @@ export function MusicSheetUploader({
         }`}
       >
         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-          <Upload className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400" />
-          <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-            {uploading ? "Analyzing..." : "Click to upload PDF music sheet"}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            PDF up to {maxSizeMB}MB
-          </p>
+          {uploading ? (
+            <div className="flex flex-col items-center">
+              <Loader className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400 animate-spin" />
+              <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                Analyzing... This may take a moment
+              </p>
+            </div>
+          ) : (
+            <>
+              <Upload className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400" />
+              <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                Click to upload PDF music sheet
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                PDF up to {maxSizeMB}MB
+              </p>
+            </>
+          )}
         </div>
         <input
           id="sheet-upload"
@@ -116,6 +143,7 @@ export function MusicSheetUploader({
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
           className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+          disabled={uploading}
         >
           <Sliders className="w-4 h-4 mr-1" />
           {showAdvanced ? "Hide advanced options" : "Show advanced options"}
@@ -131,10 +159,14 @@ export function MusicSheetUploader({
             <textarea
               id="custom-prompt"
               className="w-full p-2 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600"
-              placeholder="Optional: Provide specific instructions for the AI analysis"
+              placeholder="Optional: Override the default samba analysis prompt"
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
+              disabled={uploading}
             />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Leave empty to use the default samba analysis prompt
+            </p>
           </div>
           
           <div>
@@ -150,6 +182,7 @@ export function MusicSheetUploader({
               value={temperature}
               onChange={(e) => setTemperature(parseFloat(e.target.value))}
               className="w-full"
+              disabled={uploading}
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Controls randomness: 0 = deterministic, 1 = maximum creativity
@@ -169,6 +202,7 @@ export function MusicSheetUploader({
               value={topP}
               onChange={(e) => setTopP(parseFloat(e.target.value))}
               className="w-full"
+              disabled={uploading}
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Nucleus sampling: only consider tokens with top probability mass
@@ -188,10 +222,12 @@ export function MusicSheetUploader({
               value={topK ?? 40}
               onChange={(e) => setTopK(parseInt(e.target.value))}
               className="w-full"
+              disabled={uploading}
             />
             <button 
               className="mt-1 text-xs text-blue-500 hover:text-blue-700" 
               onClick={() => setTopK(undefined)}
+              disabled={uploading}
             >
               Reset (use model default)
             </button>

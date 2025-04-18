@@ -43,6 +43,13 @@ export async function POST(req: NextRequest) {
 
     // Get the file name and size for logging
     console.log("[/api/analyze-sheet] Processing file:", file.name, "Size:", Math.round(file.size / 1024), "KB");
+    console.log("[/api/analyze-sheet] AI parameters:", { 
+      prompt: prompt ? (prompt.length > 100 ? prompt.substring(0, 100) + "..." : prompt) : "default prompt",
+      temperature,
+      top_p,
+      top_k,
+      model 
+    });
 
     // Process the PDF with the AI model
     const result = await analyzeMusicSheetPdf(file, prompt, {
@@ -52,7 +59,13 @@ export async function POST(req: NextRequest) {
       model: model as any,
     });
 
-    // Create the response data
+    console.log("[/api/analyze-sheet] Analysis result:", {
+      analysisSummary: result.analysis.length > 100 ? result.analysis.substring(0, 100) + "..." : result.analysis,
+      mnemonicsCount: result.mnemonics.length,
+      firstMnemonic: result.mnemonics[0] ? JSON.stringify(result.mnemonics[0]).substring(0, 100) : "none"
+    });
+
+    // Create the response data - aiClient.ts already handles the parsing
     const responseData = {
       filename: file.name,
       aiSummary: result.analysis,

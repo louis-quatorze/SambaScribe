@@ -4,14 +4,24 @@ import { useState } from "react";
 import { MusicSheetUploader } from "@/components/MusicSheetUploader";
 import { AiNotationData } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
+import { Loader } from "lucide-react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function MusicSheetAnalysisPage() {
   const [results, setResults] = useState<AiNotationData | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showRawData, setShowRawData] = useState(false);
+
+  const handleProcessStart = () => {
+    setIsProcessing(true);
+  };
 
   const handleProcessComplete = (data: AiNotationData) => {
     setResults(data);
+    setIsProcessing(false);
+    // Log the full result data to console for debugging
+    console.log("[MusicSheetAnalysisPage] Full AI results:", data);
     // Scroll to results if needed
     document.getElementById("results-section")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -28,34 +38,82 @@ export default function MusicSheetAnalysisPage() {
               Upload a PDF of your samba music sheet and our AI will analyze it
               to generate mnemonics and provide insights.
             </p>
-            <MusicSheetUploader onProcessComplete={handleProcessComplete} />
+            <MusicSheetUploader 
+              onProcessComplete={handleProcessComplete} 
+              onProcessStart={handleProcessStart}
+            />
           </Card>
         </div>
         
         <div id="results-section">
-          {results ? (
+          {isProcessing ? (
+            <Card className="p-6 flex flex-col items-center justify-center min-h-[300px] text-center">
+              <Loader className="w-8 h-8 mb-4 text-primary animate-spin" />
+              <p className="text-gray-600 dark:text-gray-400">
+                AI is analyzing your music sheet...
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                This may take a minute or two depending on the complexity of the sheet
+              </p>
+            </Card>
+          ) : results ? (
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
               <div className="mb-4">
                 <h3 className="text-lg font-medium">File: {results.filename}</h3>
+                <button 
+                  onClick={() => setShowRawData(!showRawData)} 
+                  className="text-xs text-blue-500 hover:text-blue-700 mt-2"
+                >
+                  {showRawData ? "Hide Raw Data" : "Show Raw Data (Debug)"}
+                </button>
+                
+                {showRawData && (
+                  <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-900 rounded overflow-auto max-h-[300px]">
+                    <pre className="text-xs whitespace-pre-wrap">
+                      {JSON.stringify(results, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
               
               <div className="mb-6">
                 <h3 className="text-lg font-medium mb-2">Analysis</h3>
                 <div className="prose dark:prose-invert max-w-none">
-                  <div dangerouslySetInnerHTML={{ __html: results.aiSummary }} />
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    {results.aiSummary.includes('<') && results.aiSummary.includes('>') ? (
+                      <div dangerouslySetInnerHTML={{ __html: results.aiSummary }} />
+                    ) : (
+                      <p className="whitespace-pre-wrap">{results.aiSummary}</p>
+                    )}
+                  </div>
                 </div>
               </div>
               
+              {results.labels && results.labels.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-2">Extracted Labels & Captions</h3>
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <ul className="list-disc pl-5 space-y-1">
+                      {results.labels.map((label, index) => (
+                        <li key={index} className="text-gray-700 dark:text-gray-300">
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+              
               <div>
-                <h3 className="text-lg font-medium mb-2">Mnemonics</h3>
+                <h3 className="text-lg font-medium mb-2">Samba Rhythm Mnemonics</h3>
                 <div className="space-y-4">
                   {results.mnemonics.map((mnemonic, index) => (
-                    <div key={index} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="font-semibold">{mnemonic.pattern || `Pattern ${index + 1}`}</div>
-                      <div className="text-lg my-1">{mnemonic.text}</div>
+                    <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
+                      <div className="font-semibold text-blue-600 dark:text-blue-400">{mnemonic.pattern || `Rhythm Pattern ${index + 1}`}</div>
+                      <div className="text-lg my-2 font-mono">&quot;{mnemonic.text}&quot;</div>
                       {mnemonic.description && (
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-2 italic">
                           {mnemonic.description}
                         </div>
                       )}

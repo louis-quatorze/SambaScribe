@@ -61,6 +61,13 @@
 - Updated sample PDFs functionality to allow analysis without login, providing a preview experience to non-authenticated users while encouraging sign-up for full features.
 - Fixed backend authentication error by modifying the PDF analyzer tRPC route to use publicProcedure instead of protectedProcedure, with conditional authentication that allows sample PDFs to be analyzed by anonymous users.
 - Redesigned homepage layout with 50/50 split between Illustration image and Sample PDFs section, removed all gradient backgrounds, and improved content organization for better visual balance.
+- Updated MusicSheetUploader to use a specialized samba analysis prompt that outputs structured JSON with summary and mnemonics.
+- Enhanced JSON parsing in aiClient.ts to properly handle the structured format.
+- Added comprehensive logging to track prompt, model used, and AI results.
+- Added a debug toggle in the UI to display raw response data.
+- Updated homepage to use the same samba analysis prompt with structured JSON output.
+- Enhanced pdfAnalyzer router with specialized samba analysis prompt and detailed logging.
+- Improved homepage results display with structured presentation of mnemonics and pattern descriptions.
 
 # SambaScribe Updates
 

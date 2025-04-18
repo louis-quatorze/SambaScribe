@@ -563,7 +563,7 @@ export async function analyzeMusicSheetPdf(
     console.log(`[Music Sheet Analysis] Processing PDF: ${filename}, Base64 length: ${truncatedBase64.length} chars${wasFileTruncated ? ' (truncated)' : ''}`);
     
     // Default prompt if none provided
-    const defaultPrompt = "Analyze this samba music sheet PDF, identify all rhythm patterns, and generate mnemonics for each pattern. Please load all the captions, and section names from the file. Return a JSON object with 'analysis' containing your detailed analysis with the section names and 'mnemonics' containing an array of mnemonic objects.";
+    const defaultPrompt = "Act as a music analyst for a samba piece. Your task is to offer a concise summary of the composition, identifying its style, the type of samba (if recognizable), and the general instrumentation or ensemble setup. Pinpoint rhythm patterns, breaks, section labels, and captions from the file, and outline the overall structure and flow of the piece based on these elements. For each unique rhythm or break, devise a mnemonic entry. Deliver your complete response in the provided JSON format: {\"summary\": \"brief piece description and structure\", \"mnemonics\": [{\"pattern\": \"rhythm description\", \"mnemonic\": \"memorable phrase\", \"description\": \"relation of phrase to rhythm\"}]}. Each mnemonic should assist performers in internalizing the rhythm, be vivid, amusing, easy to remember, and encapsulate the feel or phrasing of the pattern.";
     
     const finalPrompt = prompt || defaultPrompt;
 
@@ -606,10 +606,15 @@ export async function analyzeMusicSheetPdf(
       userMessage;
     
     console.log("[Music Sheet Analysis] User message (truncated):", truncatedUserMessage);
+    console.log("[Music Sheet Analysis] Model being used:", modelNameStr);
     console.log("[Music Sheet Analysis] Sending API request for PDF analysis");
     
     // Using the generateChatCompletion function instead of direct API call
     const responseText = await generateChatCompletion(completionParams);
+    
+    console.log("[Music Sheet Analysis] Raw AI response:", responseText.length > 500 ? 
+      responseText.substring(0, 250) + `... [${responseText.length - 500} CHARS TRUNCATED] ...` + responseText.substring(responseText.length - 250) : 
+      responseText);
     
     // Parse the response
     let result = {
@@ -620,34 +625,53 @@ export async function analyzeMusicSheetPdf(
     // Try to extract structured data from the response
     try {
       // Check if response contains JSON
-      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch && jsonMatch[1]) {
-        const jsonContent = jsonMatch[1].trim();
-        const parsedJson = JSON.parse(jsonContent);
-        
-        if (parsedJson.mnemonics && Array.isArray(parsedJson.mnemonics)) {
-          result.mnemonics = parsedJson.mnemonics;
+      const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      let jsonContent = jsonMatch ? jsonMatch[1].trim() : responseText.trim();
+      
+      // Handle potential JSON within the content
+      if (jsonContent.includes('{') && jsonContent.includes('}')) {
+        const jsonStartIdx = jsonContent.indexOf('{');
+        const jsonEndIdx = jsonContent.lastIndexOf('}') + 1;
+        if (jsonStartIdx >= 0 && jsonEndIdx > jsonStartIdx) {
+          jsonContent = jsonContent.substring(jsonStartIdx, jsonEndIdx);
         }
-        
-        if (parsedJson.analysis) {
-          result.analysis = parsedJson.analysis;
-        }
-      } else {
-        // Try to parse the entire response as JSON
+      }
+      
+      // Try parsing if it looks like JSON
+      if (jsonContent.startsWith('{') && jsonContent.endsWith('}')) {
         try {
-          const parsedResponse = JSON.parse(responseText);
-          if (parsedResponse.mnemonics && Array.isArray(parsedResponse.mnemonics)) {
-            result.mnemonics = parsedResponse.mnemonics;
+          const parsedJson = JSON.parse(jsonContent);
+          
+          // Log parsed JSON structure
+          console.log("[Music Sheet Analysis] Successfully parsed JSON response:", JSON.stringify({
+            keys: Object.keys(parsedJson),
+            hasSummary: !!parsedJson.summary,
+            hasAnalysis: !!parsedJson.analysis,
+            mnemonicsCount: parsedJson.mnemonics?.length || 0
+          }));
+          
+          // Check for the new format (summary + mnemonics with mnemonic field)
+          if (parsedJson.summary) {
+            result.analysis = parsedJson.summary;
+          } else if (parsedJson.analysis) {
+            result.analysis = parsedJson.analysis;
           }
-          if (parsedResponse.analysis) {
-            result.analysis = parsedResponse.analysis;
+          
+          if (parsedJson.mnemonics && Array.isArray(parsedJson.mnemonics)) {
+            // Convert from either format to our expected format
+            result.mnemonics = parsedJson.mnemonics.map((item: any) => ({
+              text: item.mnemonic || item.text || '',
+              pattern: item.pattern || '',
+              description: item.description || ''
+            }));
           }
         } catch (e) {
-          // Not JSON, keep using the full text as analysis
+          console.error("[Music Sheet Analysis] Error parsing JSON content:", e);
+          // Not valid JSON, keep using the full text as analysis
         }
       }
     } catch (parseError) {
-      console.error("[Music Sheet Analysis] Error parsing structured data:", parseError);
+      console.error("[Music Sheet Analysis] Error in JSON extraction process:", parseError);
       // Keep using the full response as the analysis
     }
     
