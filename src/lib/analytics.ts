@@ -24,13 +24,13 @@ export function trackEvent(type: EventType, target: string, metadata?: Record<st
     metadata,
     timestamp: Date.now()
   };
-  
+
   // Add to queue
   eventQueue.push(event);
-  
+
   // Log to console during development
   console.log('[Analytics]', event);
-  
+
   // In a production environment, we would batch send these events
   // to the server, but for now we'll just store them and periodically flush
   if (eventQueue.length >= 10) {
@@ -66,14 +66,14 @@ export function trackAnalysisComplete(source: 'sample' | 'upload', name: string,
  */
 async function flushEvents() {
   if (eventQueue.length === 0) return;
-  
+
   const events = [...eventQueue];
   eventQueue.length = 0; // Clear the queue
-  
+
   try {
     // Log that we're sending events
     console.log(`[Analytics] Sending ${events.length} events to server...`);
-    
+
     // Send to API endpoint
     const response = await fetch('/api/analytics', {
       method: 'POST',
@@ -82,12 +82,12 @@ async function flushEvents() {
       },
       body: JSON.stringify({ events }),
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       throw new Error(`Server response error: ${response.status} - ${errorData.error || response.statusText}`);
     }
-    
+
     const data = await response.json();
     console.log(`[Analytics] Successfully sent ${data.count} events to server`);
     return true;
@@ -105,7 +105,7 @@ async function flushEvents() {
  */
 export async function forceFlushEvents() {
   console.log('[Analytics] Force flushing events...');
-  
+
   if (eventQueue.length === 0) {
     console.log('[Analytics] No events to flush');
     return true;
@@ -114,7 +114,7 @@ export async function forceFlushEvents() {
   try {
     const result = await flushEvents();
     console.log(`[Analytics] Force flush ${result ? 'succeeded' : 'failed'} with ${eventQueue.length} events remaining in queue`);
-    
+
     // If the first attempt failed and there are still events, try once more
     if (!result && eventQueue.length > 0) {
       console.log('[Analytics] Retrying event flush...');
@@ -122,7 +122,7 @@ export async function forceFlushEvents() {
       console.log(`[Analytics] Retry flush ${retryResult ? 'succeeded' : 'failed'} with ${eventQueue.length} events remaining in queue`);
       return retryResult;
     }
-    
+
     return result;
   } catch (error) {
     console.error('[Analytics] Error in forceFlushEvents:', error);
@@ -136,18 +136,18 @@ if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
     flushEvents();
   });
-  
+
   // Flush on page visibility change (when user tabs back to the page)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && eventQueue.length > 0) {
       flushEvents();
     }
   });
-  
+
   // Set up interval for periodic flushing
   setInterval(() => {
     if (eventQueue.length > 0) {
       flushEvents();
     }
   }, 30000); // 30 seconds
-} 
+}
