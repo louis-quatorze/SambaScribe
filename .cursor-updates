@@ -131,6 +131,15 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 - Implemented proper error messages with toast notifications for unauthorized access attempts.
 - Updated analytics page to display events in reverse chronological order (newest first) for both database records and log files.
 - Fixed analytics logging for sample file and upload events by adding comprehensive error handling, immediate event flushing, and better data validation to ensure all events are properly recorded and displayed in the analytics dashboard.
-- Fixed analytics page to properly show user email instead of "anonymous" by extracting email from metadata
 
- 
+ -   R e v e r t e d   r e c e n t   a n a l y t i c s   c h a n g e s   t o   r e s t o r e   w o r k i n g   s t a t e   a n d   f i x   c o r r u p t e d   f i l e s 
+ 
+- Replaced main homepage image from Illustration.jpg to Samba.png for better visual representation of samba music themes
+
+- Added OpenGraph and Twitter card metadata to enable rich social media previews when SambaScribe is shared on platforms like Telegram and WhatsApp
+
+- Updated metadataBase URL to point to actual deployment at sambascribe.onrender.com for proper social media preview images
+
+- Added samba.png as main page illustration, website favicon, and social media preview image
+
+ 
