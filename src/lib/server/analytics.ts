@@ -107,15 +107,29 @@ export function parseLogEntries(
         
         // Ensure the metadata is consistently an object
         if (eventData.metadata) {
-          // If it's already a string representation of an object, leave it
+          let metadataObj;
+          
+          // If it's a string representation of an object, parse it
           if (typeof eventData.metadata === 'string' && 
               (eventData.metadata.startsWith('{') || eventData.metadata.startsWith('['))) {
-            // It's already a JSON string, leave it as is
+            try {
+              metadataObj = JSON.parse(eventData.metadata);
+            } catch (err) {
+              // If parsing fails, keep as is
+              metadataObj = null;
+            }
           } else if (typeof eventData.metadata === 'object') {
-            // It's an object, which is fine
-          } else {
-            // For any other format, convert to string to ensure consistency
-            eventData.metadata = String(eventData.metadata);
+            metadataObj = eventData.metadata;
+          }
+          
+          // Extract userEmail from metadata if available
+          if (metadataObj && metadataObj.email && !eventData.userEmail) {
+            eventData.userEmail = metadataObj.email;
+          }
+          
+          // Extract userId from metadata if available
+          if (metadataObj && metadataObj.userId && !eventData.userId) {
+            eventData.userId = metadataObj.userId;
           }
         }
         

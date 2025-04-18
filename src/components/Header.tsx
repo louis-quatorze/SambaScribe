@@ -43,7 +43,10 @@ export function Header() {
 
   // Track navigation events
   const trackNavigation = (destination: string) => {
-    trackEvent('click', 'navigation', { destination });
+    trackEvent('click', 'navigation', { 
+      destination,
+      email: session?.user?.email 
+    });
   };
 
   return (
