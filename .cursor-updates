@@ -69,6 +69,7 @@
 - Enhanced pdfAnalyzer router with specialized samba analysis prompt and detailed logging.
 - Improved homepage results display with structured presentation of mnemonics and pattern descriptions.
 - Fixed upload events not being properly logged in analytics by adding tracking calls and ensuring events are properly flushed
+- Added credits with "By Fadi (the amazing)" in the website footer to properly acknowledge the creator.
 
 # SambaScribe Updates
 
@@ -148,5 +149,4 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 - Added migration script to move files from public/uploads to uploads directory
 - Fixed remaining async params error in file serving API by adding force-dynamic directive and properly handling params
 
-- Fixed analytics page display issues by enhancing user identification to show email addresses instead of 'anonymous' and improving metadata formatting to properly handle character-by-character JSON representations.
- 
+ 

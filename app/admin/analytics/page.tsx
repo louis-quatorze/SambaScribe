@@ -27,86 +27,20 @@ function formatMetadata(metadata: any): string {
   if (!metadata) return '-';
   
   try {
-    // First check if it's a character-by-character object (has numeric keys 0,1,2,etc.)
-    if (metadata && typeof metadata === 'object') {
-      const keys = Object.keys(metadata);
-      // Check if all keys are consecutive numbers starting from 0
-      const isCharArray = keys.length > 0 && 
-                        keys.every((key, index) => Number(key) === index);
-      
-      if (isCharArray) {
-        // Convert the character array to a string
-        const reconstructedString = Object.values(metadata).join('');
-        console.log("Reconstructed string:", reconstructedString);
-        
-        try {
-          // Check if the string is valid JSON
-          if (reconstructedString.startsWith('{') || reconstructedString.startsWith('[')) {
-            const parsedJson = JSON.parse(reconstructedString);
-            
-            // Remove email and userId from parsed JSON if they exist
-            if (typeof parsedJson === 'object') {
-              if ('email' in parsedJson) {
-                delete parsedJson.email;
-              }
-              if ('userId' in parsedJson) {
-                delete parsedJson.userId;
-              }
-            }
-            
-            return JSON.stringify(parsedJson, null, 2);
-          }
-          
-          // If not JSON, return as is
-          return reconstructedString;
-        } catch (parseError) {
-          console.error("Error parsing reconstructed string:", parseError);
-          return reconstructedString;
-        }
-      }
-    }
-    
-    // Handle regular objects
-    if (metadata && typeof metadata === 'object') {
-      const displayMetadata = { ...metadata };
-      
-      // Remove email and userId if they exist
-      if ('email' in displayMetadata) {
-        delete displayMetadata.email;
-      }
-      if ('userId' in displayMetadata) {
-        delete displayMetadata.userId;
-      }
-      
-      return JSON.stringify(displayMetadata, null, 2);
-    }
-    
-    // Handle JSON strings
+    // If it's a string that looks like JSON, parse it
     if (typeof metadata === 'string' && (metadata.startsWith('{') || metadata.startsWith('['))) {
-      try {
-        const parsedJson = JSON.parse(metadata);
-        
-        // Remove email and userId if they exist
-        if (typeof parsedJson === 'object') {
-          if ('email' in parsedJson) {
-            delete parsedJson.email;
-          }
-          if ('userId' in parsedJson) {
-            delete parsedJson.userId;
-          }
-        }
-        
-        return JSON.stringify(parsedJson, null, 2);
-      } catch (error) {
-        // If parsing fails, just return the original string
-        return metadata;
-      }
+      return JSON.stringify(JSON.parse(metadata), null, 2);
     }
     
-    // Default case - return as string
+    // If it's already an object, just stringify it
+    if (typeof metadata === 'object') {
+      return JSON.stringify(metadata, null, 2);
+    }
+    
+    // Otherwise return as is
     return String(metadata);
   } catch (error) {
-    console.error("Error formatting metadata:", error);
+    console.error("Error formatting metadata:", error, metadata);
     return String(metadata);
   }
 }
@@ -336,10 +270,7 @@ export default function AnalyticsPage() {
                           {event.target}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {event.userEmail || 
-                           (event.metadata && typeof event.metadata === 'object' && event.metadata.email) || 
-                           (event.userId?.substring(0, 8)) || 
-                           'anonymous'}
+                          {event.userEmail || (event.userId?.substring(0, 8)) || 'anonymous'}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                           <pre className="max-w-xs overflow-x-auto">

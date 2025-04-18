@@ -36,17 +36,8 @@ export async function GET(req: NextRequest) {
     // Parse log entries within date range
     const events = parseLogEntries(startDate, endDate);
     
-    // Ensure emails are properly extracted from metadata if not already present
-    const enhancedEvents = events.map(event => {
-      // If userEmail is not present but exists in metadata, extract it
-      if (!event.userEmail && event.metadata && typeof event.metadata === 'object' && event.metadata.email) {
-        event.userEmail = event.metadata.email;
-      }
-      return event;
-    });
-    
     // Compute statistics
-    const eventTypes = enhancedEvents.map(event => event.type);
+    const eventTypes = events.map(event => event.type);
     const eventCounts = eventTypes.reduce((counts: Record<string, number>, type: string) => {
       counts[type] = (counts[type] || 0) + 1;
       return counts;
@@ -54,21 +45,24 @@ export async function GET(req: NextRequest) {
     
     // Extract user IDs if available
     const userCounts: Record<string, number> = {};
-    enhancedEvents.forEach(event => {
-      // Prefer email over userId for tracking user activity
-      const userIdentifier = event.userEmail || 
-                           (event.metadata && typeof event.metadata === 'object' && event.metadata.email) || 
-                           event.userId || 
-                           'anonymous';
+    events.forEach(event => {
+      if (event.metadata && event.metadata.userId) {
+        const userId = event.metadata.userId;
+        userCounts[userId] = (userCounts[userId] || 0) + 1;
+      }
       
-      userCounts[userIdentifier] = (userCounts[userIdentifier] || 0) + 1;
+      // Check for email in metadata
+      if (event.metadata && event.metadata.email) {
+        const email = event.metadata.email;
+        userCounts[email] = (userCounts[email] || 0) + 1;
+      }
     });
     
     return NextResponse.json({
-      events: enhancedEvents,
+      events,
       eventCounts,
       userCounts,
-      total: enhancedEvents.length,
+      total: events.length,
       dateRange: {
         start: startDate.toISOString(),
         end: endDate.toISOString()

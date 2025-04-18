@@ -64,19 +64,6 @@ export async function POST(req: NextRequest) {
       }
       
       return isValid;
-    }).map(event => {
-      // Ensure user info is included in each event
-      if (userEmail && !event.userEmail) {
-        event.userEmail = userEmail;
-      }
-      if (userId !== 'anonymous' && !event.userId) {
-        event.userId = userId;
-      }
-      // If there's an email in metadata but not directly on the event, promote it
-      if (!event.userEmail && event.metadata && typeof event.metadata === 'object' && event.metadata.email) {
-        event.userEmail = event.metadata.email;
-      }
-      return event;
     });
     
     if (validEvents.length === 0) {
