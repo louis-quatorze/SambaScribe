@@ -61,24 +61,9 @@ export default function MusicSheetAnalysisPage() {
               <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
               <div className="mb-4">
                 <h3 className="text-lg font-medium">File: {results.filename}</h3>
-                <button 
-                  onClick={() => setShowRawData(!showRawData)} 
-                  className="text-xs text-blue-500 hover:text-blue-700 mt-2"
-                >
-                  {showRawData ? "Hide Raw Data" : "Show Raw Data (Debug)"}
-                </button>
-                
-                {showRawData && (
-                  <div className="mt-2 p-3 bg-gray-100 dark:bg-gray-900 rounded overflow-auto max-h-[300px]">
-                    <pre className="text-xs whitespace-pre-wrap">
-                      {JSON.stringify(results, null, 2)}
-                    </pre>
-                  </div>
-                )}
               </div>
               
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Analysis</h3>
                 <div className="prose dark:prose-invert max-w-none">
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     {results.aiSummary.includes('<') && results.aiSummary.includes('>') ? (
@@ -106,7 +91,7 @@ export default function MusicSheetAnalysisPage() {
               )}
               
               <div>
-                <h3 className="text-lg font-medium mb-2">Samba Rhythm Mnemonics</h3>
+                <h3 className="text-lg font-medium mb-2">Mnemonics</h3>
                 <div className="space-y-4">
                   {results.mnemonics.map((mnemonic, index) => (
                     <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">

@@ -353,13 +353,6 @@ export default function HomePage() {
                     Analysis Results {analyzedFilename ? `for ${analyzedFilename}` : ""}
                   </h2>
                   
-                  <button 
-                    onClick={() => setShowRawData(!showRawData)} 
-                    className="text-xs text-blue-500 hover:text-blue-700 mb-4"
-                  >
-                    {showRawData ? "Hide Raw Data" : "Show Raw Data (Debug)"}
-                  </button>
-                  
                   {isLoading ? (
                     <div className="flex flex-col items-center justify-center p-8">
                       <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
@@ -369,17 +362,8 @@ export default function HomePage() {
                     </div>
                   ) : (
                     <div>
-                      {showRawData && (
-                        <div className="mb-6 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg overflow-auto max-h-[300px]">
-                          <pre className="text-xs whitespace-pre-wrap">
-                            {analysisResult}
-                          </pre>
-                        </div>
-                      )}
-                      
                       {analysisResult && (
                         <div className="prose dark:prose-invert max-w-none mb-6">
-                          <h3 className="text-lg font-semibold mb-2">Analysis</h3>
                           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                             {analysisResult.includes('<') && analysisResult.includes('>') ? (
                               <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
@@ -392,7 +376,7 @@ export default function HomePage() {
                       
                       {parsedMnemonics.length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold mb-2">Samba Rhythm Mnemonics</h3>
+                          <h3 className="text-lg font-semibold mb-2">Mnemonics</h3>
                           <div className="space-y-4">
                             {parsedMnemonics.map((mnemonic, index) => (
                               <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border-l-4 border-blue-500">
