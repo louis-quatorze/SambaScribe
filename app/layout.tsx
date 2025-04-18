@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/files/samba.png" />
+        <link rel="icon" href="/files/favicon.ico" />
       </head>
       <body className={`${inter.className} min-h-screen bg-white dark:bg-gray-900 dark:text-gray-50`}>
         <TRPCReactProvider>

@@ -142,4 +142,6 @@ Updated the mnemonics generation prompts and system roles in aiPdfProcessor.ts t
 
 - Added samba.png as main page illustration, website favicon, and social media preview image
 
+- Updated website favicon to use favicon.ico for better cross-browser compatibility
+
  
