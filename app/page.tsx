@@ -449,17 +449,6 @@ export default function HomePage() {
           <span className="text-sm text-neutral-600 dark:text-neutral-400">
             © {new Date().getFullYear()} SambaScribe | By Fadi (the amazing)
           </span>
-          <div className="flex items-center gap-6 text-sm text-neutral-600 dark:text-neutral-400">
-            <a href="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400">
-              Privacy Policy
-            </a>
-            <a href="/terms" className="hover:text-blue-600 dark:hover:text-blue-400">
-              Terms of Service
-            </a>
-            <a href="/contact" className="hover:text-blue-600 dark:hover:text-blue-400">
-              Contact
-            </a>
-          </div>
         </div>
       </footer>
     </div>

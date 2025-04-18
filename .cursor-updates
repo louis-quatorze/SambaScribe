@@ -70,6 +70,7 @@
 - Improved homepage results display with structured presentation of mnemonics and pattern descriptions.
 - Fixed upload events not being properly logged in analytics by adding tracking calls and ensuring events are properly flushed
 - Added credits with "By Fadi (the amazing)" in the website footer to properly acknowledge the creator.
+- Removed non-existent links (Privacy Policy, Terms of Service, Contact) from the footer for better user experience.
 
 # SambaScribe Updates
 
