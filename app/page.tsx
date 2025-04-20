@@ -227,7 +227,7 @@ export default function HomePage() {
             <section className="text-center py-8 md:py-12 px-4 rounded-2xl bg-blue-600 text-white shadow-md">
 
               <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90">
-                Analyze PDF documents with AI to understand samba rhythms, patterns, and musical structures.
+                Analyze PDF documents with AI to understand samba rhythms, patterns, and musical structures. Get helpful mnemonics to remember complex rhythms.
               </p>
               
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-lg">
