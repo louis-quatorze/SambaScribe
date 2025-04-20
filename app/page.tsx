@@ -225,9 +225,7 @@ export default function HomePage() {
           <div className="space-y-8">
             {/* Hero Section */}
             <section className="text-center py-8 md:py-12 px-4 rounded-2xl bg-blue-600 text-white shadow-md">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">
-                SambaScribe PDF Analyzer
-              </h1>
+
               <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90">
                 Analyze PDF documents with AI to understand samba rhythms, patterns, and musical structures.
               </p>
@@ -313,7 +311,7 @@ export default function HomePage() {
                   Upload PDF
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Upload your own PDF document for AI analysis
+                  Upload your own document for AI analysis
                 </p>
                 {status === "unauthenticated" ? (
                   <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center bg-gray-50 dark:bg-gray-800/30">
